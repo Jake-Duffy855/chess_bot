@@ -3,12 +3,9 @@ from Piece import *
 
 class Action:
 
-    def __init__(self, start_piece: Piece, end_piece: Piece):
-        self.start_piece = start_piece
-        self.end_piece = end_piece
+    def __init__(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
+        self.start_pos = start_pos
+        self.end_pos = end_pos
 
-    def get_start_pos(self):
-        return self.start_piece.pos
-
-    def get_end_pos(self):
-        return self.end_piece.pos
+    def __str__(self):
+        return f'{self.start_pos} -> {self.end_pos}'

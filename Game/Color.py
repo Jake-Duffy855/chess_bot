@@ -8,7 +8,7 @@ class White(Color):
         return "W"
 
     def __eq__(self, other):
-        return other is White
+        return isinstance(other, White)
 
 
 class Black(Color):
@@ -17,4 +17,4 @@ class Black(Color):
         return "B"
 
     def __eq__(self, other):
-        return other is Black
+        return isinstance(other, Black)

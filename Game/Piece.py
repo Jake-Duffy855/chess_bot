@@ -3,8 +3,7 @@ from Color import *
 
 class Piece:
 
-    def __init__(self, pos: tuple, color: Color):
-        self.pos = pos
+    def __init__(self, color: Color):
         self.color = color
 
     def __eq__(self, other):
@@ -13,7 +12,7 @@ class Piece:
 
 class Pawn(Piece):
     def __eq__(self, other):
-        return other is Pawn and other.color == self.color and other.pos == self.pos
+        return isinstance(other, Pawn) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}P'
@@ -24,7 +23,7 @@ class Pawn(Piece):
 
 class Knight(Piece):
     def __eq__(self, other):
-        return other is Knight and other.color == self.color and other.pos == self.pos
+        return isinstance(other, Knight) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}N'
@@ -35,7 +34,7 @@ class Knight(Piece):
 
 class Bishop(Piece):
     def __eq__(self, other):
-        return other is Bishop and other.color == self.color and other.pos == self.pos
+        return isinstance(other, Bishop) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}B'
@@ -46,7 +45,7 @@ class Bishop(Piece):
 
 class Rook(Piece):
     def __eq__(self, other):
-        return other is Rook and other.color == self.color and other.pos == self.pos
+        return isinstance(other, Rook) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}R'
@@ -57,7 +56,7 @@ class Rook(Piece):
 
 class Queen(Piece):
     def __eq__(self, other):
-        return other is Queen and other.color == self.color and other.pos == self.pos
+        return isinstance(other, Queen) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}Q'
@@ -68,7 +67,7 @@ class Queen(Piece):
 
 class King(Piece):
     def __eq__(self, other):
-        return other is King and other.color == self.color and other.pos == self.pos
+        return isinstance(other, King) and other.color == self.color
 
     def __str__(self) -> str:
         return f'{self.color}K'
@@ -79,11 +78,11 @@ class King(Piece):
 
 class EmptySquare(Piece):
 
-    def __init__(self, loc):
-        self.loc = loc
+    def __init__(self):
+        pass
 
     def __eq__(self, other):
-        return other is EmptySquare and other.pos == self.pos
+        return isinstance(other, EmptySquare)
 
     def __str__(self) -> str:
         return f'  '
@@ -93,4 +92,4 @@ class EmptySquare(Piece):
 
 
 if __name__ == '__main__':
-    print(Pawn((1, 1), Black()))
+    print(Pawn(Black()))

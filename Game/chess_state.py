@@ -3,37 +3,62 @@ from Piece import *
 from Color import *
 
 DEFAULT_BOARD = [
-    [Rook((0, 0), Black()), Knight((0, 1), Black()), Bishop((0, 2), Black()), Queen((0, 3), Black()),
-     King((0, 4), Black()), Bishop((0, 5), Black()), Knight((0, 6), Black()), Rook((0, 7), Black())],
-    [Pawn((1, i), Black()) for i in range(8)],
-    [EmptySquare((2, i)) for i in range(8)],
-    [EmptySquare((3, i)) for i in range(8)],
-    [EmptySquare((4, i)) for i in range(8)],
-    [EmptySquare((5, i)) for i in range(8)],
-    [Pawn((6, i), White()) for i in range(8)],
-    [Rook((7, 0), White()), Knight((7, 1), White()), Bishop((7, 2), White()), Queen((7, 3), White()),
-     King((7, 4), White()), Bishop((7, 5), White()), Knight((7, 6), White()), Rook((7, 7), White())]
+    [Rook(Black()), Knight(Black()), Bishop(Black()), Queen(Black()),
+     King(Black()), Bishop(Black()), Knight(Black()), Rook(Black())],
+    [Pawn(Black()) for _ in range(8)],
+    [EmptySquare() for _ in range(8)],
+    [EmptySquare() for _ in range(8)],
+    [EmptySquare() for _ in range(8)],
+    [EmptySquare() for _ in range(8)],
+    [Pawn(White()) for _ in range(8)],
+    [Rook(White()), Knight(White()), Bishop(White()), Queen(White()),
+     King(White()), Bishop(White()), Knight(White()), Rook(White())]
 ]
 
 
 class ChessState:
 
-    def __init__(self, pieces):
+    def __init__(self, pieces, wcl=True, wcr=True, bcl=True, bcr=True, en_passant=[]):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
+        self.wcl = wcl
+        self.wcr = wcr
+        self.bcl = bcl
+        self.bcr = bcr
+        self.en_passant = en_passant
 
     def get_legal_moves(self, agent):
         return None
 
     def get_successor_state(self, action: Action, agent: Color):
-        new_pieces = [[piece for piece in row] for row in self.pieces]
-        x, y = action.get_start_pos()
-        new_pieces[x][y] = EmptySquare(action.get_start_pos())
-        x, y = action.get_end_pos()
-        new_pieces[x][y] = action.end_piece
+        if self.__is_legal_move(action, agent):
+            new_pieces = [[piece for piece in row] for row in self.pieces]
+            sx, sy = action.start_pos
+            ex, ey = action.end_pos
+            new_pieces[ex][ey] = self.get_piece_at(action.start_pos)
+            new_pieces[sx][sy] = EmptySquare()
 
-        return ChessState(new_pieces)
+            return ChessState(new_pieces)
+        else:
+            raise ValueError("Bruh")
 
+    def __is_legal_move(self, action: Action, agent: Color):
+        sloc = action.start_pos
+        eloc = action.end_pos
+        # moving wrong color piece or empty square
+        if self.get_piece_at(sloc) == EmptySquare() or self.get_piece_at(sloc).color != agent:
+            return False
+        # moving piece onto own piece
+        if self.get_piece_at(eloc) != EmptySquare() and self.get_piece_at(eloc).color == agent:
+            return False
+        # moving piece off of board
+        if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
+            return False
+
+        return True
+
+    def get_piece_at(self, loc: tuple[int, int]) -> Piece:
+        return self.pieces[loc[0]][loc[1]]
 
     def __str__(self):
         result = "-" * 41 + "\n"
@@ -47,4 +72,15 @@ class ChessState:
 if __name__ == '__main__':
     c = ChessState(DEFAULT_BOARD)
     print(c)
-    print(c.get_successor_state(Action(DEFAULT_BOARD[6][4], Pawn((4, 4), White())), White()))
+    for i in range(64):
+        for j in range(64):
+            try:
+                c.get_successor_state(Action((i // 8, i % 8), (j // 8, j % 8)), Black())
+            except ValueError as e:
+                pass
+            except Exception as f:
+                print(Action((i // 8, i % 8), (j // 8, j % 8)))
+                raise
+
+    print(c)
+    print(c.get_successor_state(Action((6, 4), (4, 4)), White()))
