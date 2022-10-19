@@ -55,17 +55,36 @@ class ChessState:
         # moving piece off of board
         if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
             return False
+
+        spiece = self.get_piece_at(sloc)
+        epiece = self.get_piece_at(eloc)
+
         # moving wrong color piece or empty square
-        if self.get_piece_at(sloc) == EmptySquare() or self.get_piece_at(sloc).color != agent:
+        if spiece == EmptySquare() or spiece.color != agent:
             return False
         # moving piece onto own piece
-        if self.get_piece_at(eloc) != EmptySquare() and self.get_piece_at(eloc).color == agent:
+        if epiece != EmptySquare() and epiece.color == agent:
             return False
 
-        if self.get_piece_at(sloc) == Pawn(agent):
-            pass
-        elif self.get_piece_at(sloc) == Knight(agent):
-            pass
+        # only knights can jump, i.e. other pieces can't move through other pieces
+        if self.get_piece_at(sloc) != Knight(agent):
+            si, sj = sloc
+            ei, ej = eloc
+            num_in_between = max(abs(ei - si), abs(ej - sj))
+            di = (ei - si) // num_in_between
+            dj = (ej - sj) // num_in_between
+            for idx in range(1, num_in_between):
+                piece_in_between = self.get_piece_at((si + di * idx, sj + dj * idx))
+                if piece_in_between != EmptySquare():
+                    return False
+
+        # pawns can take diagonally
+        if spiece == Pawn(agent):
+            si, sj = sloc
+            ei, ej = eloc
+            if abs(ei - si) == 1 and abs(ej - sj) == 1 and (
+                    epiece == EmptySquare() or epiece.color == spiece.color):
+                return False
 
         return True
 
@@ -76,24 +95,24 @@ class ChessState:
         return 0
 
     def __str__(self) -> str:
-        result = "-" * 41 + "\n"
+        result = "-"*17 + "\n"
         for row in self.pieces:
             for piece in row:
-                result += "| " + str(piece) + " "
-            result += "|\n" + "-" * 41 + "\n"
+                result += str(piece) + " "
+            result += "\n"
+        result += "-"*17
         return result
 
 
 if __name__ == '__main__':
     c = ChessState(DEFAULT_BOARD)
-    idx = 0
-    while idx < 100:
+    moves = 0
+    while moves < 100:
         print(c)
-        if idx % 2 == 0:
+        if moves % 2 == 0:
             a = White()
         else:
             a = Black()
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
-        idx += 1
-        input()
-
+        moves += 1
+    print(c)

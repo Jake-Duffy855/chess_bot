@@ -30,7 +30,9 @@ class Pawn(Piece):
         return isinstance(other, Pawn) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}P'
+        if self.color == White():
+            return '♙'
+        return '♟'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -47,7 +49,9 @@ class Knight(Piece):
         return isinstance(other, Knight) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}N'
+        if self.color == White():
+            return '♘'
+        return '♞'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -64,7 +68,9 @@ class Bishop(Piece):
         return isinstance(other, Bishop) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}B'
+        if self.color == White():
+            return '♗'
+        return '♝'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -81,7 +87,9 @@ class Rook(Piece):
         return isinstance(other, Rook) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}R'
+        if self.color == White():
+            return '♖'
+        return '♜'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -99,7 +107,9 @@ class Queen(Piece):
         return isinstance(other, Queen) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}Q'
+        if self.color == White():
+            return '♕'
+        return '♛'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -115,7 +125,9 @@ class King(Piece):
         return isinstance(other, King) and other.color == self.color
 
     def __str__(self) -> str:
-        return f'{self.color}K'
+        if self.color == White():
+            return '♔'
+        return '♚'
 
     def __hash__(self) -> int:
         return super().__hash__()
@@ -133,7 +145,7 @@ class EmptySquare(Piece):
         return isinstance(other, EmptySquare)
 
     def __str__(self) -> str:
-        return f'  '
+        return f' '
 
     def __hash__(self) -> int:
         return super().__hash__()
