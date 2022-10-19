@@ -34,7 +34,8 @@ class ChessState:
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
                 legal_moves.extend(
-                    [action for action in piece.get_possible_moves_from((i, j)) if self.__is_legal_move(action, agent)]
+                    [action for action in piece.get_possible_moves_from((i, j)) if
+                     self.__is_legal_move(action, agent) and piece.color == agent]
                 )
         return legal_moves
 
@@ -48,15 +49,21 @@ class ChessState:
     # move the piece in sloc to eloc regardless of if it's legal
     def __move_loc_to_loc(self, sloc, eloc) -> list[list[Piece]]:
         new_pieces = [[piece for piece in row] for row in self.pieces]
-        sx, sy = sloc
-        ex, ey = eloc
-        new_pieces[ex][ey] = self.get_piece_at(sloc)
-        new_pieces[sx][sy] = EmptySquare()
+        si, sj = sloc
+        ei, ej = eloc
+        new_pieces[ei][ej] = self.get_piece_at(sloc)
+        new_pieces[si][sj] = EmptySquare()
+        if ei == 0 and new_pieces[ei][ej] == Pawn(White()):
+            new_pieces[ei][ej] = Queen(White())
+        elif ei == 7 and new_pieces[ei][ej] == Pawn(Black()):
+            new_pieces[ei][ej] = Queen(Black())
         return new_pieces
 
     def __is_legal_move(self, action: Action, agent: Color) -> bool:
         sloc = action.start_pos
         eloc = action.end_pos
+        si, sj = sloc
+        ei, ej = eloc
         # moving piece off of board
         if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
             return False
@@ -73,8 +80,6 @@ class ChessState:
 
         # only knights can jump, i.e. other pieces can't move through other pieces
         if self.get_piece_at(sloc) != Knight(agent):
-            si, sj = sloc
-            ei, ej = eloc
             num_in_between = max(abs(ei - si), abs(ej - sj))
             di = (ei - si) // num_in_between
             dj = (ej - sj) // num_in_between
@@ -85,22 +90,22 @@ class ChessState:
 
         # pawns can take diagonally, but not directly
         if spiece == Pawn(agent):
-            si, sj = sloc
-            ei, ej = eloc
-            if abs(ei - si) == 1 and abs(ej - sj) == 1 and (
-                    epiece == EmptySquare() or epiece.color == spiece.color):
-                return False
+            if abs(ei - si) == 1 and abs(ej - sj) == 1:
+                if epiece == EmptySquare() or epiece.color == spiece.color:
+                    return False
             elif epiece != EmptySquare():
                 return False
 
         # move can't result in check
         if ChessState.__is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
+            # print(action)
             return False
 
         return True
 
     @staticmethod
     def __is_in_check(new_pieces, agent):
+        # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
         king_pos = None
         for i, row in enumerate(new_pieces):
             for j, piece in enumerate(row):
@@ -135,7 +140,32 @@ class ChessState:
                 return True
             if new_pieces[ki + di][kj] != EmptySquare():
                 break
-        # diagonals
+        # diag up right (dur)
+        for d in range(1, min(ki + 1, 8 - kj)):
+            if new_pieces[ki - d][kj + d] == Bishop(opp) or new_pieces[ki - d][kj + d] == Queen(opp):
+                return True
+            if new_pieces[ki - d][kj + d] != EmptySquare():
+                break
+        # diag up left (dul)
+        for d in range(1, min(ki + 1, kj + 1)):
+            if new_pieces[ki - d][kj - d] == Bishop(opp) or new_pieces[ki - d][kj - d] == Queen(opp):
+                return True
+            if new_pieces[ki - d][kj - d] != EmptySquare():
+                break
+        # diag down right (ddr)
+        for d in range(1, min(8 - ki, 8 - kj)):
+            if new_pieces[ki + d][kj + d] == Bishop(opp) or new_pieces[ki + d][kj + d] == Queen(opp):
+                return True
+            if new_pieces[ki + d][kj + d] != EmptySquare():
+                break
+        # diag down left (ddl)
+        for d in range(1, min(8 - ki, kj + 1)):
+            if new_pieces[ki + d][kj - d] == Bishop(opp) or new_pieces[ki + d][kj - d] == Queen(opp):
+                return True
+            if new_pieces[ki + d][kj - d] != EmptySquare():
+                break
+
+
 
         # check for pawns
         if agent == White():
@@ -172,12 +202,18 @@ class ChessState:
         return not self.get_legal_moves(White()) and ChessState.__is_in_check(self.pieces, White())
 
     def is_draw(self):
-        return self.is_stalemate()
+        return self.is_stalemate() or self.insufficient_material()
 
     def is_stalemate(self):
-        return not self.get_legal_moves(White()) and not ChessState.__is_in_check(self.pieces, White()) or\
+        return not self.get_legal_moves(White()) and not ChessState.__is_in_check(self.pieces, White()) or \
                not self.get_legal_moves(Black()) and not ChessState.__is_in_check(self.pieces, Black())
 
+    def insufficient_material(self):
+        for row in self.pieces:
+            for piece in row:
+                if piece != EmptySquare() and piece != King(piece.color):
+                    return False
+        return True
 
     def get_piece_at(self, loc: tuple[int, int]) -> Piece:
         return self.pieces[loc[0]][loc[1]]
@@ -202,39 +238,52 @@ class ChessState:
         return result
 
 
-if __name__ == '__main__':
-    random.seed(94)
+def run_with_seed(seed, do_print=False):
+    # return win, loss, draw for white
+    random.seed(seed)
     c = ChessState(DEFAULT_BOARD)
     moves = 0
-    # print(c)
-    while moves < 50 and not c.is_lose() and not c.is_win() and not c.is_draw():
+    if do_print:
+        print(c)
+    while moves < 100 and not c.is_lose() and not c.is_win() and not c.is_draw():
         if moves % 2 == 0:
             a = White()
         else:
             a = Black()
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
-        print(c)
+        if do_print:
+            print(c)
         moves += 1
-    # print(c.is_win(), c.is_lose(), c.is_draw())
-    print(c)
-    # print(moves)
+    if do_print:
+        print(c.is_win(), c.is_lose(), c.is_draw())
+    return c.is_win(), c.is_lose(), c.is_draw()
 
+
+def get_interesting_seeds(n):
+    for seed in range(n):
+        if seed % 10 == 0:
+            print(seed)
+        try:
+            win, loss, draw = run_with_seed(seed)
+            if win or loss:
+                print(seed, win, loss, draw)
+        except ValueError as ve:
+            if str(ve) != "you can't take the king what??":
+                raise
+
+
+def run_random():
+    seed = int(1000 * random.random())
+    run_with_seed(seed, True)
+    print(seed)
+
+
+if __name__ == '__main__':
+    get_interesting_seeds(1000)
 
 """ Notes
-Pawn taking might be broken with check???
-
 important seeds:
-5 is stalemate
-12, 94 is checkmate by white
-94 illustrates pawn issue with knight checkmate
-    white black draw
-238 False True False
-326 True False False
-424 True False False
-466 True False False
-503 False True False
-563 True False False
-565 True False False
-678 True False False
-
+    white blck draw
+95 False True False
+168 False True False
 """
