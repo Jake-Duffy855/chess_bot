@@ -1,5 +1,6 @@
 class Color:
-    pass
+    def get_opposite(self):
+        pass
 
 
 class White(Color):
@@ -10,6 +11,9 @@ class White(Color):
     def __eq__(self, other):
         return isinstance(other, White)
 
+    def get_opposite(self):
+        return Black()
+
 
 class Black(Color):
 
@@ -18,3 +22,6 @@ class Black(Color):
 
     def __eq__(self, other):
         return isinstance(other, Black)
+
+    def get_opposite(self):
+        return White()

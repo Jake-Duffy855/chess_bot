@@ -42,7 +42,7 @@ class Knight(Piece):
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
-        diffs = [(-1,-2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
+        diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
         return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
 
     def __eq__(self, other):
@@ -61,7 +61,7 @@ class Bishop(Piece):
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
-        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
         return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
 
     def __eq__(self, other):
@@ -80,7 +80,7 @@ class Rook(Piece):
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
-        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
         return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
 
     def __eq__(self, other):
@@ -99,7 +99,7 @@ class Queen(Piece):
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
-        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
         return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs] + [
             Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
 
@@ -152,4 +152,4 @@ class EmptySquare(Piece):
 
 
 if __name__ == '__main__':
-    print([str(a) for a in Knight(White()).get_possible_moves_from((6, 4))])
+    print([str(a) for a in Rook(White()).get_possible_moves_from((6, 4))])
