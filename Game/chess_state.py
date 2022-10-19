@@ -1,6 +1,7 @@
 from Action import Action
 from Piece import *
 from Color import *
+import random
 
 DEFAULT_BOARD = [
     [Rook(Black()), Knight(Black()), Bishop(Black()), Queen(Black()),
@@ -18,7 +19,7 @@ DEFAULT_BOARD = [
 
 class ChessState:
 
-    def __init__(self, pieces, wcl=True, wcr=True, bcl=True, bcr=True, en_passant=[]):
+    def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=()):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
         self.wcl = wcl
@@ -27,8 +28,14 @@ class ChessState:
         self.bcr = bcr
         self.en_passant = en_passant
 
-    def get_legal_moves(self, agent):
-        return None
+    def get_legal_moves(self, agent: Color) -> list[Action]:
+        legal_moves = []
+        for i, row in enumerate(self.pieces):
+            for j, piece in enumerate(row):
+                legal_moves.extend(
+                    [action for action in piece.get_possible_moves_from((i, j)) if self.__is_legal_move(action, agent)]
+                )
+        return legal_moves
 
     def get_successor_state(self, action: Action, agent: Color):
         if self.__is_legal_move(action, agent):
@@ -42,25 +49,33 @@ class ChessState:
         else:
             raise ValueError("Bruh")
 
-    def __is_legal_move(self, action: Action, agent: Color):
+    def __is_legal_move(self, action: Action, agent: Color) -> bool:
         sloc = action.start_pos
         eloc = action.end_pos
+        # moving piece off of board
+        if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
+            return False
         # moving wrong color piece or empty square
         if self.get_piece_at(sloc) == EmptySquare() or self.get_piece_at(sloc).color != agent:
             return False
         # moving piece onto own piece
         if self.get_piece_at(eloc) != EmptySquare() and self.get_piece_at(eloc).color == agent:
             return False
-        # moving piece off of board
-        if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
-            return False
+
+        if self.get_piece_at(sloc) == Pawn(agent):
+            pass
+        elif self.get_piece_at(sloc) == Knight(agent):
+            pass
 
         return True
 
     def get_piece_at(self, loc: tuple[int, int]) -> Piece:
         return self.pieces[loc[0]][loc[1]]
 
-    def __str__(self):
+    def evaluate(self) -> float:
+        return 0
+
+    def __str__(self) -> str:
         result = "-" * 41 + "\n"
         for row in self.pieces:
             for piece in row:
@@ -71,16 +86,14 @@ class ChessState:
 
 if __name__ == '__main__':
     c = ChessState(DEFAULT_BOARD)
-    print(c)
-    for i in range(64):
-        for j in range(64):
-            try:
-                c.get_successor_state(Action((i // 8, i % 8), (j // 8, j % 8)), Black())
-            except ValueError as e:
-                pass
-            except Exception as f:
-                print(Action((i // 8, i % 8), (j // 8, j % 8)))
-                raise
+    idx = 0
+    while idx < 100:
+        print(c)
+        if idx % 2 == 0:
+            a = White()
+        else:
+            a = Black()
+        c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
+        idx += 1
+        input()
 
-    print(c)
-    print(c.get_successor_state(Action((6, 4), (4, 4)), White()))

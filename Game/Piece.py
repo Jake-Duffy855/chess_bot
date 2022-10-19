@@ -1,4 +1,5 @@
 from Color import *
+from Action import *
 
 
 class Piece:
@@ -9,8 +10,22 @@ class Piece:
     def __eq__(self, other):
         return other == self
 
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        pass
+
 
 class Pawn(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        if self.color == Black():
+            step = 1
+            double = [Action(loc, (i + 2 * step, j))] if i == 1 else []
+        else:
+            step = -1
+            double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
+        return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
+
     def __eq__(self, other):
         return isinstance(other, Pawn) and other.color == self.color
 
@@ -22,6 +37,12 @@ class Pawn(Piece):
 
 
 class Knight(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        diffs = [(-1,-2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
+        return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
+
     def __eq__(self, other):
         return isinstance(other, Knight) and other.color == self.color
 
@@ -33,6 +54,12 @@ class Knight(Piece):
 
 
 class Bishop(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
+
     def __eq__(self, other):
         return isinstance(other, Bishop) and other.color == self.color
 
@@ -44,6 +71,12 @@ class Bishop(Piece):
 
 
 class Rook(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
+
     def __eq__(self, other):
         return isinstance(other, Rook) and other.color == self.color
 
@@ -55,6 +88,13 @@ class Rook(Piece):
 
 
 class Queen(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        diffs = [diff for diff in range(-8, 9) if diff != 0]
+        return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs] + [
+            Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
+
     def __eq__(self, other):
         return isinstance(other, Queen) and other.color == self.color
 
@@ -66,6 +106,11 @@ class Queen(Piece):
 
 
 class King(Piece):
+
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        i, j = loc
+        return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if di != 0 or dj != 0]
+
     def __eq__(self, other):
         return isinstance(other, King) and other.color == self.color
 
@@ -81,6 +126,9 @@ class EmptySquare(Piece):
     def __init__(self):
         pass
 
+    def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
+        return []
+
     def __eq__(self, other):
         return isinstance(other, EmptySquare)
 
@@ -92,4 +140,4 @@ class EmptySquare(Piece):
 
 
 if __name__ == '__main__':
-    print(Pawn(Black()))
+    print([str(a) for a in Knight(White()).get_possible_moves_from((6, 4))])

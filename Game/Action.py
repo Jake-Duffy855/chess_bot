@@ -1,6 +1,3 @@
-from Piece import *
-
-
 class Action:
 
     def __init__(self, start_pos: tuple[int, int], end_pos: tuple[int, int]):
