@@ -8,13 +8,16 @@ class Piece:
         self.color = color
 
     def __eq__(self, other):
-        return other == self
+        return self is other
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         pass
 
 
 class Pawn(Piece):
+
+    def __init__(self, color: Color):
+        self.color = color
 
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
@@ -27,7 +30,7 @@ class Pawn(Piece):
         return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
 
     def __eq__(self, other):
-        return isinstance(other, Pawn) and other.color == self.color
+        return self is other or isinstance(other, Pawn) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -40,13 +43,16 @@ class Pawn(Piece):
 
 class Knight(Piece):
 
+    def __init__(self, color: Color):
+        self.color = color
+
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
         diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
         return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
 
     def __eq__(self, other):
-        return isinstance(other, Knight) and other.color == self.color
+        return self is other or isinstance(other, Knight) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -59,13 +65,16 @@ class Knight(Piece):
 
 class Bishop(Piece):
 
+    def __init__(self, color: Color):
+        self.color = color
+
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
         diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
         return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
 
     def __eq__(self, other):
-        return isinstance(other, Bishop) and other.color == self.color
+        return self is other or isinstance(other, Bishop) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -78,13 +87,16 @@ class Bishop(Piece):
 
 class Rook(Piece):
 
+    def __init__(self, color: Color):
+        self.color = color
+
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
         diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
         return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
 
     def __eq__(self, other):
-        return isinstance(other, Rook) and other.color == self.color
+        return self is other or isinstance(other, Rook) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -97,6 +109,9 @@ class Rook(Piece):
 
 class Queen(Piece):
 
+    def __init__(self, color: Color):
+        self.color = color
+
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
         diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
@@ -104,7 +119,7 @@ class Queen(Piece):
             Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
 
     def __eq__(self, other):
-        return isinstance(other, Queen) and other.color == self.color
+        return self is other or isinstance(other, Queen) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -117,12 +132,15 @@ class Queen(Piece):
 
 class King(Piece):
 
+    def __init__(self, color: Color):
+        self.color = color
+
     def get_possible_moves_from(self, loc: tuple[int, int], board_size=(8, 8)) -> list[Action]:
         i, j = loc
         return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if di != 0 or dj != 0]
 
     def __eq__(self, other):
-        return isinstance(other, King) and other.color == self.color
+        return self is other or isinstance(other, King) and other.color == self.color
 
     def __str__(self) -> str:
         if self.color == White():
@@ -142,7 +160,7 @@ class EmptySquare(Piece):
         return []
 
     def __eq__(self, other):
-        return isinstance(other, EmptySquare)
+        return self is other or isinstance(other, EmptySquare)
 
     def __str__(self) -> str:
         return f' '
