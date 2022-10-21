@@ -5,23 +5,21 @@ from Piece import *
 from Color import *
 import random
 
-EMT = EmptySquare()
-WK = None
-BK = None
+EMT = Piece.EMPTY
 
 # maybe for speed up in the future use a hash from loc to piece and piece type to list of loc???
 # maybe not because there's not a lot of list searching and access is O(1) anyway
 DEFAULT_BOARD = [
-    [Rook(Black()), Knight(Black()), Bishop(Black()), Queen(Black()),
-     King(Black()), Bishop(Black()), Knight(Black()), Rook(Black())],
-    [Pawn(Black()) for _ in range(8)],
+    [Piece.BLACK_ROOK, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN,
+     Piece.BLACK_KING, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT, Piece.BLACK_ROOK],
+    [Piece.BLACK_PAWN for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
-    [Pawn(White()) for _ in range(8)],
-    [Rook(White()), Knight(White()), Bishop(White()), Queen(White()),
-     King(White()), Bishop(White()), Knight(White()), Rook(White())]
+    [Piece.WHITE_PAWN for _ in range(8)],
+    [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN,
+     Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
 ]
 
 
@@ -42,8 +40,9 @@ class ChessState:
             for j, piece in enumerate(row):
                 legal_moves.extend(
                     [action for action in piece.get_possible_moves_from((i, j)) if
-                     self.__is_legal_move(action, agent) and piece.color == agent]
+                     self.__is_legal_move(action, agent) and piece.is_color(agent)]
                 )
+        # print(legal_moves)
         return legal_moves
 
     def get_successor_state(self, action: Action, agent: Color):
@@ -60,10 +59,10 @@ class ChessState:
         ei, ej = eloc
         new_pieces[ei][ej] = self.get_piece_at(sloc)
         new_pieces[si][sj] = EMT
-        if ei == 0 and new_pieces[ei][ej] == Pawn(White()):
-            new_pieces[ei][ej] = Queen(White())
-        elif ei == 7 and new_pieces[ei][ej] == Pawn(Black()):
-            new_pieces[ei][ej] = Queen(Black())
+        if ei == 0 and new_pieces[ei][ej] == Piece.WHITE_PAWN:
+            new_pieces[ei][ej] = Piece.WHITE_QUEEN
+        elif ei == 7 and new_pieces[ei][ej] == Piece.BLACK_PAWN:
+            new_pieces[ei][ej] = Piece.BLACK_QUEEN
         return new_pieces
 
     def __is_legal_move(self, action: Action, agent: Color) -> bool:
@@ -78,15 +77,17 @@ class ChessState:
         spiece = self.get_piece_at(sloc)
         epiece = self.get_piece_at(eloc)
 
+
         # moving wrong color piece or empty square
-        if spiece == EMT or spiece.color != agent:
+        if spiece == EMT or not spiece.is_color(agent):
             return False
+
         # moving piece onto own piece
-        if epiece != EMT and epiece.color == agent:
+        if epiece != EMT and epiece.is_color(agent):
             return False
 
         # only knights can jump, i.e. other pieces can't move through other pieces
-        if self.get_piece_at(sloc) != Knight(agent):
+        if not self.get_piece_at(sloc).is_knight():
             num_in_between = max(abs(ei - si), abs(ej - sj))
             di = (ei - si) // num_in_between
             dj = (ej - sj) // num_in_between
@@ -96,26 +97,25 @@ class ChessState:
                     return False
 
         # pawns can take diagonally, but not directly
-        if spiece == Pawn(agent):
+        if spiece.is_pawn():
             if abs(ei - si) == 1 and abs(ej - sj) == 1:
-                if epiece == EMT or epiece.color == spiece.color:
+                if epiece == EMT or epiece.is_white() == spiece.is_white():
                     return False
             elif epiece != EMT:
                 return False
 
         # move can't result in check
-        if ChessState.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
-            # print(action)
+        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
             return False
 
         return True
 
-    def is_in_check(new_pieces, agent):
+    def is_in_check(self, new_pieces: list[list[Piece]], agent: Color):
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
         king_pos = None
         for i, row in enumerate(new_pieces):
             for j, piece in enumerate(row):
-                if piece == King(agent):
+                if piece.is_king and piece.is_color(agent):
                     king_pos = i, j
         if king_pos is None:
             raise ValueError("you can't take the king what??")
@@ -124,82 +124,90 @@ class ChessState:
         opp = agent.get_opposite()
         # left
         for dj in range(1, kj + 1):
-            if new_pieces[ki][kj - dj] != EMT:
-                if new_pieces[ki][kj - dj] == Rook(opp) or new_pieces[ki][kj - dj] == Queen(opp):
+            piece = new_pieces[ki][kj - dj]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
         # right
         for dj in range(1, 8 - kj):
-            if new_pieces[ki][kj + dj] != EMT:
-                if new_pieces[ki][kj + dj] == Rook(opp) or new_pieces[ki][kj + dj] == Queen(opp):
+            piece = new_pieces[ki][kj + dj]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
         # up
         for di in range(1, ki + 1):
-            if new_pieces[ki - di][kj] != EMT:
-                if new_pieces[ki - di][kj] == Rook(opp) or new_pieces[ki - di][kj] == Queen(opp):
+            piece = new_pieces[ki - di][kj]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
         # down
         for di in range(1, 8 - ki):
-            if new_pieces[ki + di][kj] != EMT:
-                if new_pieces[ki + di][kj] == Rook(opp) or new_pieces[ki + di][kj] == Queen(opp):
+            piece = new_pieces[ki + di][kj]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
         # diag up right (dur)
         for d in range(1, min(ki + 1, 8 - kj)):
-            if new_pieces[ki - d][kj + d] != EMT:
-                if new_pieces[ki - d][kj + d] == Bishop(opp) or new_pieces[ki - d][kj + d] == Queen(opp):
+            piece = new_pieces[ki - d][kj + d]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
         # diag up left (dul)
         for d in range(1, min(ki + 1, kj + 1)):
-            if new_pieces[ki - d][kj - d] != EMT:
-                if new_pieces[ki - d][kj - d] == Bishop(opp) or new_pieces[ki - d][kj - d] == Queen(opp):
+            piece = new_pieces[ki - d][kj - d]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
         # diag down right (ddr)
         for d in range(1, min(8 - ki, 8 - kj)):
-            if new_pieces[ki + d][kj + d] != EMT:
-                if new_pieces[ki + d][kj + d] == Bishop(opp) or new_pieces[ki + d][kj + d] == Queen(opp):
+            piece = new_pieces[ki + d][kj + d]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
         # diag down left (ddl)
         for d in range(1, min(8 - ki, kj + 1)):
-            if new_pieces[ki + d][kj - d] != EMT:
-                if new_pieces[ki + d][kj - d] == Bishop(opp) or new_pieces[ki + d][kj - d] == Queen(opp):
+            piece = new_pieces[ki + d][kj - d]
+            if piece != EMT:
+                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
 
         # check for pawns
-        if agent == White():
-            if ki > 1 and (kj > 0 and new_pieces[ki - 1][kj - 1] == Pawn(Black()) or
-                           kj < 7 and new_pieces[ki - 1][kj + 1] == Pawn(Black())):
+        if agent == Color.WHITE:
+            if ki > 1 and (kj > 0 and new_pieces[ki - 1][kj - 1] == Piece.BLACK_PAWN or
+                           kj < 7 and new_pieces[ki - 1][kj + 1] == Piece.BLACK_PAWN):
                 return True
         else:
-            if ki < 6 and (kj > 0 and new_pieces[ki + 1][kj - 1] == Pawn(White()) or
-                           kj < 7 and new_pieces[ki + 1][kj + 1] == Pawn(White())):
+            if ki < 6 and (kj > 0 and new_pieces[ki + 1][kj - 1] == Piece.WHITE_PAWN or
+                           kj < 7 and new_pieces[ki + 1][kj + 1] == Piece.WHITE_PAWN):
                 return True
         # check knight positions
         knight_diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
         for di, dj in knight_diffs:
             ni = ki + di
             nj = kj + dj
-            if 0 <= ni < 8 and 0 <= nj < 8 and new_pieces[ni][nj] == Knight(opp):
+            if 0 <= ni < 8 and 0 <= nj < 8 and new_pieces[ni][nj].is_knight() and new_pieces[ni][nj].is_color(opp):
                 return True
 
         # can't be directly next to a king!
         for di in range(max(-ki, -1), min(8 - ki, 2)):
             for dj in range(max(-kj, -1), min(8 - kj, 2)):
-                if new_pieces[ki + di][kj + dj] == King(opp):
+                if new_pieces[ki + di][kj + dj].is_king() and new_pieces[ki + di][kj + dj].is_color(opp):
                     return True
 
         # not in check!
@@ -207,18 +215,18 @@ class ChessState:
 
     def is_win(self):
         # black has no moves and is in check
-        return not self.get_legal_moves(Black()) and ChessState.is_in_check(self.pieces, Black())
+        return not self.get_legal_moves(Color.BLACK) and self.is_in_check(self.pieces, Color.BLACK)
 
     def is_lose(self):
         # white has no moves and is in check
-        return not self.get_legal_moves(White()) and ChessState.is_in_check(self.pieces, White())
+        return not self.get_legal_moves(Color.WHITE) and self.is_in_check(self.pieces, Color.WHITE)
 
     def is_draw(self):
         return self.is_stalemate() or self.insufficient_material()
 
     def is_stalemate(self):
-        return not self.get_legal_moves(White()) and not ChessState.is_in_check(self.pieces, White()) or \
-               not self.get_legal_moves(Black()) and not ChessState.is_in_check(self.pieces, Black())
+        return not self.get_legal_moves(Color.WHITE) and not self.is_in_check(self.pieces, Color.WHITE) or \
+               not self.get_legal_moves(Color.BLACK) and not self.is_in_check(self.pieces, Color.BLACK)
 
     def is_end_state(self, agent):
         return not self.get_legal_moves(agent)
@@ -226,7 +234,7 @@ class ChessState:
     def insufficient_material(self):
         for row in self.pieces:
             for piece in row:
-                if piece != EMT and piece != King(piece.color):
+                if piece.is_king() and piece != EMT:
                     return False
         return True
 
@@ -239,7 +247,7 @@ class ChessState:
     def __get_king_pos(self, color: Color) -> tuple[int, int]:
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
-                if piece == King(color):
+                if piece.is_king() and piece.is_color(color):
                     return i, j
         raise ValueError(f"Where the heck is the {color} king???")
 
@@ -262,9 +270,9 @@ def run_with_seed(seed, do_print=False):
         print(c)
     while moves < 100:
         if moves % 2 == 0:
-            a = White()
+            a = Color.WHITE
         else:
-            a = Black()
+            a = Color.BLACK
         if c.is_end_state(a):
             break
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
@@ -303,7 +311,8 @@ if __name__ == '__main__':
     import pstats
 
     with cProfile.Profile() as pr:
-        get_interesting_seeds(100)
+        # get_interesting_seeds(10)
+        run_with_seed(1, True)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()

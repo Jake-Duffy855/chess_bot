@@ -1,27 +1,12 @@
-class Color:
+from enum import Enum
+
+
+class Color(Enum):
+    WHITE = 0
+    BLACK = 1
+
     def get_opposite(self):
-        pass
-
-
-class White(Color):
+        return Color((self.value + 1) % 2)
 
     def __str__(self):
-        return "W"
-
-    def __eq__(self, other):
-        return isinstance(other, White)
-
-    def get_opposite(self):
-        return Black()
-
-
-class Black(Color):
-
-    def __str__(self):
-        return "B"
-
-    def __eq__(self, other):
-        return isinstance(other, Black)
-
-    def get_opposite(self):
-        return White()
+        return self.name[0]
