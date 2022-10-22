@@ -1,4 +1,6 @@
 import pygame
+from time import sleep
+import random
 from Game.ChessState import *
 from Game.Piece import *
 
@@ -62,13 +64,14 @@ selected = None
 start_square = None
 end_square = None
 legal_moves = []
+random.seed(256)
 
 # --- mainloop ---
 
 clock = pygame.time.Clock()
 is_running = True
 
-while is_running and not chess_state.is_end_state(player):
+while is_running:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -146,6 +149,26 @@ while is_running and not chess_state.is_end_state(player):
     # pygame.display.flip()
     pygame.display.update()
 
-    clock.tick(25)
+    clock.tick(60)
+    # sleep(0.5)
+    # chess_state = chess_state.get_successor_state(random.choice(chess_state.get_legal_moves(player)), player)
+    # player = player.get_opposite()
+    # rects = []
+    # pieces = []
+    # for i in range(8):
+    #     for j in range(8):
+    #         if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
+    #             rects.append(
+    #                 pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+    #             )
+    #             pieces.append(
+    #                 pygame.transform.smoothscale(
+    #                     pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
+    #                     (SQUARE_SIZE, SQUARE_SIZE))
+    #             )
+    #
+    # if chess_state.is_end_state(player):
+    #     break
+
 pygame.quit()
 print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())

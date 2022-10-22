@@ -39,30 +39,94 @@ class ChessState:
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
                 legal_moves.extend(
-                    [action for action in piece.get_possible_moves_from((i, j)) if
+                    [action for action in self.get_possible_moves(piece, (i, j)) if
                      self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
         # print(legal_moves)
         return legal_moves
 
+    def get_possible_moves(self, piece: Piece, loc):
+        i, j = loc
+        if piece.is_pawn():
+            if piece.is_black():
+                step = 1
+                double = [Action(loc, (i + 2 * step, j))] if i == 1 else []
+            else:
+                step = -1
+                double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
+            return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
+        elif piece.is_knight():
+            diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
+            return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
+        elif piece.is_bishop():
+            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
+            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
+        elif piece.is_rook():
+            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
+            return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
+        elif piece.is_queen():
+            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
+            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs] + [
+                Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
+        elif piece.is_king():
+            return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if
+                    di != 0 or dj != 0] + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
+        return []
+
     def get_successor_state(self, action: Action, agent: Color):
         if self.is_legal_move(action, agent):
             new_pieces = self.__move_loc_to_loc(action.start_pos, action.end_pos)
-            return ChessState(new_pieces)
+            # castle: move rook, still need to add checks for moved kings and moved rooks and moving through check
+            spiece = self.pieces[action.start_pos[0]][action.start_pos[1]]
+            if spiece.is_king() or spiece.is_rook():
+                self.__update_castling(action)
+
+            return ChessState(new_pieces, self.wcl, self.wcr, self.bcl, self.bcr)
         else:
             raise ValueError("Bruh")
+
+    def __update_castling(self, action):
+        si, sj = action.start_pos
+        # if king moves, no more castling
+        if self.pieces[si][sj].is_king():
+            if self.pieces[si][sj].is_white():
+                self.wcl = self.wcr = False
+            else:
+                self.bcl = self.bcr = False
+        # if rook moves, no more castling that way
+        elif action.start_pos == (0, 0):
+            self.bcl = False
+        elif action.start_pos == (0, 7):
+            self.bcr = False
+        elif action.start_pos == (7, 0):
+            self.wcl = False
+        elif action.start_pos == (7, 7):
+            self.wcr = False
 
     # move the piece in sloc to eloc regardless of if it's legal
     def __move_loc_to_loc(self, sloc, eloc) -> list[list[Piece]]:
         new_pieces = [[piece for piece in row] for row in self.pieces]
         si, sj = sloc
         ei, ej = eloc
+        spiece = new_pieces[si][sj]
         new_pieces[ei][ej] = self.get_piece_at(sloc)
         new_pieces[si][sj] = EMT
+        # promote to queen
         if ei == 0 and new_pieces[ei][ej] == Piece.WHITE_PAWN:
             new_pieces[ei][ej] = Piece.WHITE_QUEEN
         elif ei == 7 and new_pieces[ei][ej] == Piece.BLACK_PAWN:
             new_pieces[ei][ej] = Piece.BLACK_QUEEN
+
+        # castle: move rook
+        if spiece.is_king() and abs(ej - sj) == 2:
+            if ej - sj == 2:
+                # print(new_pieces[ei][ej + 1])
+                new_pieces[ei][ej - 1] = new_pieces[ei][ej + 1]
+                new_pieces[ei][ej + 1] = EMT
+            else:
+                new_pieces[ei][ej + 1] = new_pieces[ei][ej - 2]
+                new_pieces[ei][ej - 2] = EMT
+
         return new_pieces
 
     def is_legal_move(self, action: Action, agent: Color) -> bool:
@@ -76,7 +140,6 @@ class ChessState:
 
         spiece = self.get_piece_at(sloc)
         epiece = self.get_piece_at(eloc)
-
 
         # moving wrong color piece or empty square
         if spiece == EMT or not spiece.is_color(agent):
@@ -104,10 +167,25 @@ class ChessState:
             elif epiece != EMT:
                 return False
 
+        # castling, might break if moved below check
+        if spiece.is_king() and abs(ej - sj) == 2:
+            if spiece.is_white():
+                if ej - sj == 2 and not self.wcr or ej - sj == -2 and not self.wcl:
+                    return False
+            else:
+                if ej - sj == 2 and not self.bcr or ej - sj == -2 and not self.bcl:
+                    return False
+            new_end = (ei, sj + (ej - sj) // 2)
+            if not self.is_legal_move(Action(sloc, new_end), agent):
+                return False
+            if self.is_in_check(self.pieces, spiece.get_color()):
+                return False
+
         # move can't result in check
         if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
             return False
 
+        # it's a legal move!
         return True
 
     def is_in_check(self, new_pieces: list[list[Piece]], agent: Color):
@@ -312,7 +390,7 @@ if __name__ == '__main__':
 
     with cProfile.Profile() as pr:
         # get_interesting_seeds(10)
-        run_with_seed(1, True)
+        run_with_seed(256, True)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()
