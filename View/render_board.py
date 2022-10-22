@@ -158,9 +158,10 @@ while is_running:
 
     clock.tick(60)
     # sleep(0.5)
-    best_move = search_agent.get_action(chess_state, player)
-    chess_state = chess_state.get_successor_state(best_move, player)
-    player = player.get_opposite()
+    if True: # player == Color.BLACK:
+        best_move = search_agent.get_action(chess_state, player)
+        chess_state = chess_state.get_successor_state(best_move, player)
+        player = player.get_opposite()
     rects = []
     pieces = []
     for i in range(8):
