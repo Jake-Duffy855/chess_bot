@@ -1,8 +1,11 @@
+import time
+
 import pygame
 from time import sleep
 import random
 from Game.ChessState import *
 from Game.Piece import *
+from Search.SearchAgent import *
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -28,6 +31,7 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
+search_agent = AlphaBetaAgent(3)
 player = Color.WHITE
 
 image_file_by_piece = {
@@ -149,26 +153,27 @@ while is_running:
     # pygame.display.flip()
     pygame.display.update()
 
+    if chess_state.is_end_state(player):
+        continue
+
     clock.tick(60)
     # sleep(0.5)
-    # chess_state = chess_state.get_successor_state(random.choice(chess_state.get_legal_moves(player)), player)
-    # player = player.get_opposite()
-    # rects = []
-    # pieces = []
-    # for i in range(8):
-    #     for j in range(8):
-    #         if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
-    #             rects.append(
-    #                 pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-    #             )
-    #             pieces.append(
-    #                 pygame.transform.smoothscale(
-    #                     pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
-    #                     (SQUARE_SIZE, SQUARE_SIZE))
-    #             )
-    #
-    # if chess_state.is_end_state(player):
-    #     break
+    best_move = search_agent.get_action(chess_state, player)
+    chess_state = chess_state.get_successor_state(best_move, player)
+    player = player.get_opposite()
+    rects = []
+    pieces = []
+    for i in range(8):
+        for j in range(8):
+            if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
+                rects.append(
+                    pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                )
+                pieces.append(
+                    pygame.transform.smoothscale(
+                        pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
+                        (SQUARE_SIZE, SQUARE_SIZE))
+                )
 
 pygame.quit()
 print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())

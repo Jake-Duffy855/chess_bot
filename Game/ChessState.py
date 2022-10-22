@@ -42,7 +42,6 @@ class ChessState:
                     [action for action in self.get_possible_moves(piece, (i, j)) if
                      self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
-        # print(legal_moves)
         return legal_moves
 
     def get_possible_moves(self, piece: Piece, loc):
@@ -319,8 +318,17 @@ class ChessState:
     def get_piece_at(self, loc: tuple[int, int]) -> Piece:
         return self.pieces[loc[0]][loc[1]]
 
-    def evaluate(self) -> float:
-        return 1000 if self.is_win() else 0 - 1000 if self.is_lose() else 0
+    def __get_material(self):
+        score = 0
+        for row in self.pieces:
+            for piece in row:
+                score += piece.get_value()
+        return score
+
+    def evaluate(self, agent) -> float:
+        if self.is_end_state(agent):
+            return 1000 if self.is_win() else 0 - 1000 if self.is_lose() else 0
+        return self.__get_material()
 
     def __get_king_pos(self, color: Color) -> tuple[int, int]:
         for i, row in enumerate(self.pieces):
@@ -397,17 +405,6 @@ if __name__ == '__main__':
 
 """ Notes
 Moves left:
-    Castling: needed
     en-passant: mehhhh
     choosing promotion: auto-queen is easier hehe
-    
-Only need one of each object, basically enum
-
-
-important seeds:
-    white blck draw
-95 False True False
-168 False True False
-228 False True False
-256 True False False
 """

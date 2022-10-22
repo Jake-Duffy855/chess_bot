@@ -4,6 +4,7 @@ from Game.Action import *
 from enum import Enum
 
 STRING_REPS = ['♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', " "]
+MATERIAL_VALUE = [1, 3, 3, 5, 9, 0, -1, -3, -3, -5, -9, 0, 0]
 
 
 class Piece(Enum):
@@ -39,6 +40,9 @@ class Piece(Enum):
             return self.value < 6
         return 12 > self.value >= 6
 
+    def get_value(self):
+        return MATERIAL_VALUE[self.value]
+
     def is_pawn(self):
         return self.value % 6 == 0 and self.value != 12
 
@@ -62,34 +66,6 @@ class Piece(Enum):
 
     def __str__(self):
         return STRING_REPS[self.value]
-
-    def get_possible_moves_from(self, loc):
-        i, j = loc
-        if self.is_pawn():
-            if self.is_black():
-                step = 1
-                double = [Action(loc, (i + 2 * step, j))] if i == 1 else []
-            else:
-                step = -1
-                double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
-            return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
-        elif self.is_knight():
-            diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
-            return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
-        elif self.is_bishop():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
-        elif self.is_rook():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
-        elif self.is_queen():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs] + [
-                Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
-        elif self.is_king():
-            return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if
-                    di != 0 or dj != 0] + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
-        return []
 
 
 if __name__ == '__main__':
