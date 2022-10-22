@@ -105,8 +105,8 @@ class ChessState:
                 return False
 
         # move can't result in check
-        # if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
-        #     return False
+        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
+            return False
 
         return True
 
@@ -126,7 +126,7 @@ class ChessState:
         for dj in range(1, kj + 1):
             piece = new_pieces[ki][kj - dj]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -134,7 +134,7 @@ class ChessState:
         for dj in range(1, 8 - kj):
             piece = new_pieces[ki][kj + dj]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -142,7 +142,7 @@ class ChessState:
         for di in range(1, ki + 1):
             piece = new_pieces[ki - di][kj]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -150,7 +150,7 @@ class ChessState:
         for di in range(1, 8 - ki):
             piece = new_pieces[ki + di][kj]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_rook() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -158,7 +158,7 @@ class ChessState:
         for d in range(1, min(ki + 1, 8 - kj)):
             piece = new_pieces[ki - d][kj + d]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -166,7 +166,7 @@ class ChessState:
         for d in range(1, min(ki + 1, kj + 1)):
             piece = new_pieces[ki - d][kj - d]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -174,7 +174,7 @@ class ChessState:
         for d in range(1, min(8 - ki, 8 - kj)):
             piece = new_pieces[ki + d][kj + d]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -182,7 +182,7 @@ class ChessState:
         for d in range(1, min(8 - ki, kj + 1)):
             piece = new_pieces[ki + d][kj - d]
             if piece != EMT:
-                if piece.is_color(agent) and (piece.is_bishop() or piece.is_queen()):
+                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
                     return True
                 else:
                     break
@@ -211,7 +211,6 @@ class ChessState:
                     return True
 
         # not in check!
-        print(6)
         return False
 
     def is_win(self):

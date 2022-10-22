@@ -68,7 +68,7 @@ legal_moves = []
 clock = pygame.time.Clock()
 is_running = True
 
-while is_running:
+while is_running and not chess_state.is_end_state(player):
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -138,7 +138,7 @@ while is_running:
     for a in legal_moves:
         i, j = a.end_pos
         pygame.draw.rect(
-            screen, (200, 40, 40, 20), pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            screen, (200, 40, 40, 250), pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
         )
     for i, r in enumerate(rects):
         screen.blit(pieces[i], r)
@@ -148,3 +148,4 @@ while is_running:
 
     clock.tick(25)
 pygame.quit()
+print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())
