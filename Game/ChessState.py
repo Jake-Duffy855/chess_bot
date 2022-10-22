@@ -4,6 +4,8 @@ from Game.Color import *
 from Game.Piece import *
 from Game.Action import *
 import random
+import threading
+
 
 EMT = Piece.EMPTY
 
@@ -34,13 +36,26 @@ class ChessState:
         self.bcr = bcr
         self.en_passant = en_passant
 
+
+        self.threads = []
+        self.results = []
+
+    def threading_function(self, i, j, piece, agent):
+        self.results.extend([action for action in self.get_possible_moves(piece, (i, j)) if piece.is_color(agent)])
+
     def get_legal_moves(self, agent: Color) -> list[Action]:
+        self.results = []
         possible_moves = []
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
-                possible_moves.extend(
-                    [action for action in self.get_possible_moves(piece, (i, j)) if piece.is_color(agent)]
-                )
+                t = (threading.Thread(target=self.threading_function, args=(i, j, piece, agent)))
+                t.start()
+                self.threads.append(t)
+        
+        for i in range(len(self.threads)):
+            self.threads[i].join()
+        possible_moves = self.results
+
         legal_moves = []
         for move in possible_moves:
             if self.is_legal_move(move, agent):
