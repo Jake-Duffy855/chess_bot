@@ -35,13 +35,16 @@ class ChessState:
         self.en_passant = en_passant
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
-        legal_moves = []
+        possible_moves = []
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
-                legal_moves.extend(
-                    [action for action in self.get_possible_moves(piece, (i, j)) if
-                     self.is_legal_move(action, agent) and piece.is_color(agent)]
+                possible_moves.extend(
+                    [action for action in self.get_possible_moves(piece, (i, j)) if piece.is_color(agent)]
                 )
+        legal_moves = []
+        for move in possible_moves:
+            if self.is_legal_move(move, agent):
+                legal_moves.append(move)
         return legal_moves
 
     def get_possible_moves(self, piece: Piece, loc):
