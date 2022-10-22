@@ -1,8 +1,8 @@
 from timeit import Timer
 
-from Action import Action
-from Piece import *
-from Color import *
+from Game.Color import *
+from Game.Piece import *
+from Game.Action import *
 import random
 
 EMT = Piece.EMPTY
@@ -40,13 +40,13 @@ class ChessState:
             for j, piece in enumerate(row):
                 legal_moves.extend(
                     [action for action in piece.get_possible_moves_from((i, j)) if
-                     self.__is_legal_move(action, agent) and piece.is_color(agent)]
+                     self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
         # print(legal_moves)
         return legal_moves
 
     def get_successor_state(self, action: Action, agent: Color):
-        if self.__is_legal_move(action, agent):
+        if self.is_legal_move(action, agent):
             new_pieces = self.__move_loc_to_loc(action.start_pos, action.end_pos)
             return ChessState(new_pieces)
         else:
@@ -65,7 +65,7 @@ class ChessState:
             new_pieces[ei][ej] = Piece.BLACK_QUEEN
         return new_pieces
 
-    def __is_legal_move(self, action: Action, agent: Color) -> bool:
+    def is_legal_move(self, action: Action, agent: Color) -> bool:
         sloc = action.start_pos
         eloc = action.end_pos
         si, sj = sloc
@@ -105,8 +105,8 @@ class ChessState:
                 return False
 
         # move can't result in check
-        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
-            return False
+        # if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
+        #     return False
 
         return True
 
@@ -115,7 +115,7 @@ class ChessState:
         king_pos = None
         for i, row in enumerate(new_pieces):
             for j, piece in enumerate(row):
-                if piece.is_king and piece.is_color(agent):
+                if piece.is_king() and piece.is_color(agent):
                     king_pos = i, j
         if king_pos is None:
             raise ValueError("you can't take the king what??")
@@ -211,6 +211,7 @@ class ChessState:
                     return True
 
         # not in check!
+        print(6)
         return False
 
     def is_win(self):

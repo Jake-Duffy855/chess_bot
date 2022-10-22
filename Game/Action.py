@@ -6,3 +6,6 @@ class Action:
 
     def __str__(self):
         return f'{self.start_pos} -> {self.end_pos}'
+
+    def __eq__(self, other):
+        return isinstance(other, Action) and self.start_pos == other.start_pos and self.end_pos == other.end_pos

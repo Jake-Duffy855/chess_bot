@@ -1,5 +1,5 @@
-from Color import *
-from Action import *
+from Game.Color import *
+from Game.Action import *
 
 from enum import Enum
 
@@ -247,4 +247,4 @@ class Piece(Enum):
 #
 #
 if __name__ == '__main__':
-    print(Piece.BLACK_ROOK.is_color(Color.BLACK))
+    print([str(m) for m in Piece.WHITE_KING.get_possible_moves_from((4,4))])
