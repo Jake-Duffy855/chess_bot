@@ -36,31 +36,43 @@ class ChessState:
         self.bcr = bcr
         self.en_passant = en_passant
 
+        self.threads = [None] * 5
+        self.legal_moves = []
 
-        self.threads = []
-        self.results = []
 
-    def threading_function(self, i, j, piece, agent):
-        self.results.extend([action for action in self.get_possible_moves(piece, (i, j)) if piece.is_color(agent)])
+    def thread_check(self, possible_moves, agent, start, end):
+        for i in range(start, end):
+            if self.is_legal_move(possible_moves[i], agent):
+                self.legal_moves.append(possible_moves[i])
+        
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
-        self.results = []
         possible_moves = []
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
-                t = (threading.Thread(target=self.threading_function, args=(i, j, piece, agent)))
-                t.start()
-                self.threads.append(t)
-        
-        for i in range(len(self.threads)):
-            self.threads[i].join()
-        possible_moves = self.results
+                possible_moves.extend(
+                    [action for action in self.get_possible_moves(piece, (i, j)) if piece.is_color(agent)]
+                )
 
-        legal_moves = []
-        for move in possible_moves:
-            if self.is_legal_move(move, agent):
-                legal_moves.append(move)
-        return legal_moves
+        self.legal_moves = []
+        
+        if possible_moves:
+            length = len(possible_moves)
+            threads = len(self.threads)
+
+            if threads >= length:
+                threads = length
+
+            for i in range(threads):
+                start = int(i * length / threads)
+                end = int((i + 1) * length / threads )
+                self.threads[i] = threading.Thread(target=self.thread_check, args=(possible_moves, agent, start, end))
+                self.threads[i].start()
+            
+            for i in range(len(self.threads)):
+                self.threads[i].join()
+
+        return self.legal_moves
 
     def get_possible_moves(self, piece: Piece, loc):
         i, j = loc
