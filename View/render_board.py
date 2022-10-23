@@ -129,7 +129,7 @@ while is_running:
                 else:
                     # print(move, [str(m) for m in chess_state.get_legal_moves(player) if
                     #              m.start_pos == start_square])
-                    print(move, chess_state.get_legal_moves(player))
+                    # print(move, [str(m) for m in chess_state.ge(player)])
                     rects[selected].x = start_square[1] * SQUARE_SIZE
                     rects[selected].y = start_square[0] * SQUARE_SIZE
                 start_square = None

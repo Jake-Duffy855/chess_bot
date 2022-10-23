@@ -1,5 +1,4 @@
 from Game.Color import *
-from Game.Action import *
 
 from enum import Enum
 

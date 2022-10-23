@@ -1,6 +1,3 @@
-from timeit import Timer
-
-from Game.Color import *
 from Game.Piece import *
 from Game.Action import *
 import random
@@ -24,16 +21,17 @@ DEFAULT_BOARD = [
 ]
 # up, down, left, right, dul, dur, ddl, ddr
 move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-dist_to_edge = [[0] * 8] * 8
+dist_to_edge = []
 for i in range(8):
+    dist_to_edge.append([])
     for j in range(8):
         u = i
         d = 7 - i
         l = j
         r = 7 - j
-        dist_to_edge[i][j] = [
+        dist_to_edge[i].append([
             u, d, l, r, min(u, l), min(u, r), min(d, l), min(d, r)
-        ]
+        ])
 
 
 class ChessState:
@@ -56,7 +54,8 @@ class ChessState:
             for j, piece in enumerate(row):
                 legal_moves.extend(
                     [action for action in self.get_possible_moves(piece, (i, j), agent) if
-                     self.is_legal_move(action, agent) and piece.is_color(agent)]
+                     piece.is_color(agent) and self.is_legal_move(action, agent)]
+                     # self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
         return legal_moves
 
@@ -71,37 +70,25 @@ class ChessState:
                 double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
             return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
         # bishops, rooks, and queens
-        # elif piece.is_sliding():
-        #     moves = []
-        #     start_idx = 4 if piece.is_bishop() else 0
-        #     end_idx = 4 if piece.is_rook() else 8
-        #     for direction in range(start_idx, end_idx):
-        #         for dist in range(dist_to_edge[i][j][direction]):
-        #             di, dj = move_diffs[direction]
-        #             new_i = i + di * (dist + 1)
-        #             new_j = j + dj * (dist + 1)
-        #             target_piece = self.pieces[new_i][new_j]
-        #             if target_piece.is_color(agent):
-        #                 break
-        #             moves.append(Action(loc, (new_i, new_j)))
-        #             if target_piece.is_color(agent.get_opposite()):
-        #                 break
-        #     return moves
+        elif piece.is_sliding():
+            moves = []
+            start_idx = 4 if piece.is_bishop() else 0
+            end_idx = 4 if piece.is_rook() else 8
+            for direction in range(start_idx, end_idx):
+                for dist in range(dist_to_edge[i][j][direction]):
+                    di, dj = move_diffs[direction]
+                    new_i = i + di * (dist + 1)
+                    new_j = j + dj * (dist + 1)
+                    target_piece = self.pieces[new_i][new_j]
+                    if target_piece.is_color(agent):
+                        break
+                    moves.append(Action(loc, (new_i, new_j)))
+                    if target_piece.is_color(agent.get_opposite()):
+                        break
+            return moves
         elif piece.is_knight():
             diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
             return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
-
-
-        elif piece.is_bishop():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
-        elif piece.is_rook():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
-        elif piece.is_queen():
-            diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
-            return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs] + [
-                Action(loc, (i + d, j)) for d in diffs] + [Action(loc, (i, j + d)) for d in diffs]
         elif piece.is_king():
             return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if
                     di != 0 or dj != 0] + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
