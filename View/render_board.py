@@ -31,8 +31,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
-search_agent = AlphaBetaAgent(2)
-auto_move = False
+search_agent = AlphaBetaAgent(3)
+auto_move = True
 player = Color.WHITE
 
 image_file_by_piece = {

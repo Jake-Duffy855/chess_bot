@@ -209,22 +209,24 @@ class ChessState:
             new_end = (ei, sj + (ej - sj) // 2)
             if not self.is_legal_move(Action(sloc, new_end), agent):
                 return False
-            if self.is_in_check(self.pieces, spiece.get_color()):
+            if self.is_in_check(self.pieces, spiece.get_color(), sloc):
                 return False
 
         # move can't result in check
-        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent):
+        if agent == Color.WHITE:
+            king_pos = self.white_king_pos
+        else:
+            king_pos = self.black_king_pos
+        if king_pos == sloc:
+            king_pos = eloc
+        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos):
             return False
 
         # it's a legal move!
         return True
 
-    def is_in_check(self, new_pieces: list[list[Piece]], agent: Color):
+    def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos):
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
-        if agent == Color.WHITE:
-            king_pos = self.white_king_pos
-        else:
-            king_pos = self.black_king_pos
 
         if king_pos is None:
             raise ValueError("you can't take the king what??")
@@ -324,18 +326,20 @@ class ChessState:
 
     def is_win(self):
         # black has no moves and is in check
-        return not self.get_legal_moves(Color.BLACK) and self.is_in_check(self.pieces, Color.BLACK)
+        return not self.get_legal_moves(Color.BLACK) and self.is_in_check(self.pieces, Color.BLACK, self.black_king_pos)
 
     def is_lose(self):
         # white has no moves and is in check
-        return not self.get_legal_moves(Color.WHITE) and self.is_in_check(self.pieces, Color.WHITE)
+        return not self.get_legal_moves(Color.WHITE) and self.is_in_check(self.pieces, Color.WHITE, self.white_king_pos)
 
     def is_draw(self):
         return self.is_stalemate() or self.insufficient_material()
 
     def is_stalemate(self):
-        return not self.get_legal_moves(Color.WHITE) and not self.is_in_check(self.pieces, Color.WHITE) or \
-               not self.get_legal_moves(Color.BLACK) and not self.is_in_check(self.pieces, Color.BLACK)
+        return not self.get_legal_moves(Color.WHITE) and \
+               not self.is_in_check(self.pieces, Color.WHITE, self.white_king_pos) or \
+               not self.get_legal_moves(Color.BLACK) and \
+               not self.is_in_check(self.pieces, Color.BLACK, self.black_king_pos)
 
     def is_end_state(self, agent):
         return not self.get_legal_moves(agent)
@@ -430,7 +434,7 @@ if __name__ == '__main__':
 
     with cProfile.Profile() as pr:
         # get_interesting_seeds(10)
-        run_with_seed(256, True)
+        run_with_seed(1, True)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()
