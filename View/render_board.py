@@ -31,7 +31,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
-search_agent = AlphaBetaAgent(3)
+search_agent = AlphaBetaAgent(2)
+auto_move = False
 player = Color.WHITE
 
 image_file_by_piece = {
@@ -48,6 +49,7 @@ image_file_by_piece = {
     Piece.BLACK_QUEEN: "./pieces_images/black_queen.png",
     Piece.BLACK_KING: "./pieces_images/black_king.png",
 }
+
 
 rects = []
 pieces = []
@@ -158,9 +160,10 @@ while is_running:
 
     clock.tick(60)
     # sleep(0.5)
-    best_move = search_agent.get_action(chess_state, player)
-    chess_state = chess_state.get_successor_state(best_move, player)
-    player = player.get_opposite()
+    if auto_move:
+        best_move = search_agent.get_action(chess_state, player)
+        chess_state = chess_state.get_successor_state(best_move, player)
+        player = player.get_opposite()
     rects = []
     pieces = []
     for i in range(8):

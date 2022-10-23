@@ -6,6 +6,7 @@ from Game.Action import *
 import random
 
 EMT = Piece.EMPTY
+# count_calls = [0] * 8
 
 # maybe for speed up in the future use a hash from loc to piece and piece type to list of loc???
 # maybe not because there's not a lot of list searching and access is O(1) anyway
@@ -21,11 +22,24 @@ DEFAULT_BOARD = [
     [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN,
      Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
 ]
+# up, down, left, right, dul, dur, ddl, ddr
+move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+dist_to_edge = [[0] * 8] * 8
+for i in range(8):
+    for j in range(8):
+        u = i
+        d = 7 - i
+        l = j
+        r = 7 - j
+        dist_to_edge[i][j] = [
+            u, d, l, r, min(u, l), min(u, r), min(d, l), min(d, r)
+        ]
 
 
 class ChessState:
 
-    def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=()):
+    def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=(),
+                 white_king_pos=(7, 4), black_king_pos=(0, 4)):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
         self.wcl = wcl
@@ -33,18 +47,20 @@ class ChessState:
         self.bcl = bcl
         self.bcr = bcr
         self.en_passant = en_passant
+        self.white_king_pos = white_king_pos
+        self.black_king_pos = black_king_pos
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
         legal_moves = []
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
                 legal_moves.extend(
-                    [action for action in self.get_possible_moves(piece, (i, j)) if
+                    [action for action in self.get_possible_moves(piece, (i, j), agent) if
                      self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
         return legal_moves
 
-    def get_possible_moves(self, piece: Piece, loc):
+    def get_possible_moves(self, piece: Piece, loc, agent: Color):
         i, j = loc
         if piece.is_pawn():
             if piece.is_black():
@@ -54,9 +70,28 @@ class ChessState:
                 step = -1
                 double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
             return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
+        # bishops, rooks, and queens
+        # elif piece.is_sliding():
+        #     moves = []
+        #     start_idx = 4 if piece.is_bishop() else 0
+        #     end_idx = 4 if piece.is_rook() else 8
+        #     for direction in range(start_idx, end_idx):
+        #         for dist in range(dist_to_edge[i][j][direction]):
+        #             di, dj = move_diffs[direction]
+        #             new_i = i + di * (dist + 1)
+        #             new_j = j + dj * (dist + 1)
+        #             target_piece = self.pieces[new_i][new_j]
+        #             if target_piece.is_color(agent):
+        #                 break
+        #             moves.append(Action(loc, (new_i, new_j)))
+        #             if target_piece.is_color(agent.get_opposite()):
+        #                 break
+        #     return moves
         elif piece.is_knight():
             diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
             return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
+
+
         elif piece.is_bishop():
             diffs = [diff for diff in range(-max(i, j), 8 - min(i, j)) if diff != 0]
             return [Action(loc, (i + d, j + d)) for d in diffs] + [Action(loc, (i + d, j - d)) for d in diffs]
@@ -70,6 +105,7 @@ class ChessState:
         elif piece.is_king():
             return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if
                     di != 0 or dj != 0] + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
+
         return []
 
     def get_successor_state(self, action: Action, agent: Color):
@@ -77,10 +113,19 @@ class ChessState:
             new_pieces = self.__move_loc_to_loc(action.start_pos, action.end_pos)
             # castle: move rook, still need to add checks for moved kings and moved rooks and moving through check
             spiece = self.pieces[action.start_pos[0]][action.start_pos[1]]
-            if spiece.is_king() or spiece.is_rook():
+            new_white_king_pos = self.white_king_pos
+            new_black_king_pos = self.black_king_pos
+            if spiece.is_king():
+                self.__update_castling(action)
+                if spiece.is_white():
+                    new_white_king_pos = action.end_pos
+                else:
+                    new_black_king_pos = action.end_pos
+            if spiece.is_rook():
                 self.__update_castling(action)
 
-            return ChessState(new_pieces, self.wcl, self.wcr, self.bcl, self.bcr)
+            return ChessState(new_pieces, self.wcl, self.wcr, self.bcl, self.bcr, white_king_pos=new_white_king_pos,
+                              black_king_pos=new_black_king_pos)
         else:
             raise ValueError("Bruh")
 
@@ -189,11 +234,11 @@ class ChessState:
 
     def is_in_check(self, new_pieces: list[list[Piece]], agent: Color):
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
-        king_pos = None
-        for i, row in enumerate(new_pieces):
-            for j, piece in enumerate(row):
-                if piece.is_king() and piece.is_color(agent):
-                    king_pos = i, j
+        if agent == Color.WHITE:
+            king_pos = self.white_king_pos
+        else:
+            king_pos = self.black_king_pos
+
         if king_pos is None:
             raise ValueError("you can't take the king what??")
         # go up, down, left, right, diagonals see if there's an attacking piece
