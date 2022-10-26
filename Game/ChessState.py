@@ -79,20 +79,28 @@ class ChessState:
             for j, piece in enumerate(row):
                 legal_moves.extend(
                     [action for action in self.get_possible_moves(piece, (i, j), agent) if
-                     piece.is_color(agent) and self.is_legal_move(action, agent)]
+                     self.__faster_is_legal(action, agent)]
                 )
         return legal_moves
 
     def get_possible_moves(self, piece: Piece, loc, agent: Color):
+        if piece == EMT or not piece.is_color(agent):
+            return []
         i, j = loc
         if piece.is_pawn():
-            if piece.is_black():
-                step = 1
-                double = [Action(loc, (i + 2 * step, j))] if i == 1 else []
-            else:
-                step = -1
-                double = [Action(loc, (i + 2 * step, j))] if i == 6 else []
-            return [Action(loc, (i + step, j)), Action(loc, (i + step, j + 1)), Action(loc, (i + step, j - 1))] + double
+            result = []
+            step = 1 if piece.is_black() else -1
+            home_row = 1 if piece.is_black() else 6
+            # add double pawn push
+            if i == home_row and self.pieces[i + step][j] == EMT and self.pieces[i + 2 * step][j] == EMT:
+                result.append(Action(loc, (i + 2 * step, j)))
+            # single push
+            for dj in range(-1, 2):
+                # valid push or valid take
+                if dj == 0 and self.pieces[i + step][j] == EMT or dj != 0 and 0 <= j + dj < 8 and \
+                        self.pieces[i + step][j + dj].is_color(agent.get_opposite()):
+                    result.append(Action(loc, (i + step, j + dj)))
+            return result
         # bishops, rooks, and queens
         elif piece.is_sliding():
             moves = []
@@ -112,11 +120,22 @@ class ChessState:
             return moves
         elif piece.is_knight():
             diffs = [(-1, -2), (-2, -1), (-2, 1), (-1, 2), (1, 2), (2, 1), (2, -1), (1, -2)]
-            return [Action(loc, (i + di, j + dj)) for di, dj in diffs]
+            result = []
+            for di, dj in diffs:
+                if 0 <= (i + di) < 8 and 0 <= (j + dj) < 8 and not self.pieces[i + di][j + dj].is_color(agent):
+                    result.append(Action(loc, (i + di, j + dj)))
+            return result
         elif piece.is_king():
-            return [Action(loc, (i + di, j + dj)) for di in range(-1, 2) for dj in range(-1, 2) if
-                    di != 0 or dj != 0] + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
-
+            result = []
+            for di in range(-1, 2):
+                for dj in range(-1, 2):
+                    if 0 <= (i + di) < 8 and 0 <= (j + dj) < 8 and not self.pieces[i + di][j + dj].is_color(
+                            piece.get_color()):
+                        result.append(Action(loc, (i + di, j + dj)))
+            # add caslting back in
+            # if j <
+            #     + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
+            return result
         return []
 
     def get_successor_state(self, action: Action, agent: Color):
@@ -194,29 +213,6 @@ class ChessState:
         ei, ej = eloc
 
         spiece = self.get_piece_at(sloc)
-        epiece = self.get_piece_at(eloc)
-
-        # moving piece onto own piece
-        if epiece != EMT and epiece.is_color(agent):
-            return False
-
-        # only knights can jump, i.e. other pieces can't move through other pieces
-        if not self.get_piece_at(sloc).is_knight():
-            num_in_between = max(abs(ei - si), abs(ej - sj))
-            di = (ei - si) // num_in_between
-            dj = (ej - sj) // num_in_between
-            for idx in range(1, num_in_between):
-                piece_in_between = self.get_piece_at((si + di * idx, sj + dj * idx))
-                if piece_in_between != EMT:
-                    return False
-
-        # pawns can take diagonally, but not directly
-        if spiece.is_pawn():
-            if abs(ei - si) == 1 and abs(ej - sj) == 1:
-                if epiece == EMT or epiece.is_white() == spiece.is_white():
-                    return False
-            elif epiece != EMT:
-                return False
 
         # castling, might break if moved below check
         if spiece.is_king() and abs(ej - sj) == 2:
@@ -233,10 +229,7 @@ class ChessState:
                 return False
 
         # move can't result in check
-        if agent == Color.WHITE:
-            king_pos = self.white_king_pos
-        else:
-            king_pos = self.black_king_pos
+        king_pos = self.__get_king_pos(agent)
         if king_pos == sloc:
             king_pos = eloc
         if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos):
@@ -246,69 +239,10 @@ class ChessState:
         return True
 
     def is_legal_move(self, action: Action, agent: Color) -> bool:
+        # if its possible and legal
         sloc = action.start_pos
-        eloc = action.end_pos
-        si, sj = sloc
-        ei, ej = eloc
-        # moving piece off of board
-        if min(sloc + eloc) < 0 or max(sloc[0], eloc[0]) >= self.size[0] or max(sloc[1], eloc[1]) >= self.size[1]:
-            return False
-
-        spiece = self.get_piece_at(sloc)
-        epiece = self.get_piece_at(eloc)
-
-        # moving wrong color piece or empty square
-        if spiece == EMT or not spiece.is_color(agent):
-            return False
-
-        # moving piece onto own piece
-        if epiece != EMT and epiece.is_color(agent):
-            return False
-
-        # only knights can jump, i.e. other pieces can't move through other pieces
-        if not self.get_piece_at(sloc).is_knight():
-            num_in_between = max(abs(ei - si), abs(ej - sj))
-            di = (ei - si) // num_in_between
-            dj = (ej - sj) // num_in_between
-            for idx in range(1, num_in_between):
-                piece_in_between = self.get_piece_at((si + di * idx, sj + dj * idx))
-                if piece_in_between != EMT:
-                    return False
-
-        # pawns can take diagonally, but not directly
-        if spiece.is_pawn():
-            if abs(ei - si) == 1 and abs(ej - sj) == 1:
-                if epiece == EMT or epiece.is_white() == spiece.is_white():
-                    return False
-            elif epiece != EMT:
-                return False
-
-        # castling, might break if moved below check
-        if spiece.is_king() and abs(ej - sj) == 2:
-            if spiece.is_white():
-                if ej - sj == 2 and not self.wcr or ej - sj == -2 and not self.wcl:
-                    return False
-            else:
-                if ej - sj == 2 and not self.bcr or ej - sj == -2 and not self.bcl:
-                    return False
-            new_end = (ei, sj + (ej - sj) // 2)
-            if not self.is_legal_move(Action(sloc, new_end), agent):
-                return False
-            if self.is_in_check(self.pieces, spiece.get_color(), sloc):
-                return False
-
-        # move can't result in check
-        if agent == Color.WHITE:
-            king_pos = self.white_king_pos
-        else:
-            king_pos = self.black_king_pos
-        if king_pos == sloc:
-            king_pos = eloc
-        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos):
-            return False
-
-        # it's a legal move!
-        return True
+        possible_moves = self.get_possible_moves(self.pieces[sloc[0]][sloc[1]], sloc, agent)
+        return action in possible_moves and self.__faster_is_legal(action, agent)
 
     def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos):
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
@@ -318,6 +252,7 @@ class ChessState:
         # go up, down, left, right, diagonals see if there's an attacking piece
         ki, kj = king_pos
         opp = agent.get_opposite()
+        ## just do for loop for sliding moves!!!!!!
         # left
         for dj in range(1, kj + 1):
             piece = new_pieces[ki][kj - dj]
@@ -408,6 +343,11 @@ class ChessState:
 
         # not in check!
         return False
+
+    def __get_king_pos(self, agent: Color):
+        if agent == Color.WHITE:
+            return self.white_king_pos
+        return self.black_king_pos
 
     def is_win(self):
         # black has no moves and is in check
@@ -510,6 +450,6 @@ if __name__ == '__main__':
 Moves left:
     en-passant: mehhhh
     choosing promotion: auto-queen is easier hehe
-    not finding mate
-    castling left is broken, can move trhough horse
+    castling isi broken again add back to possible moves
+    
 """

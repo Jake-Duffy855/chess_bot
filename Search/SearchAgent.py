@@ -60,8 +60,10 @@ class AlphaBetaAgent(SearchAgent):
         best_action = None
         for action in legal_actions:
             successor = chess_state.get_successor_state(action, agent)
-            successor_score = GAMMA ** depth * self.get_best_action_score(
-                successor, new_agent, alpha, beta, new_depth)[1]
+            successor_score = self.get_best_action_score(successor, new_agent, alpha, beta, new_depth)[1]
+            if agent == Color.WHITE and successor_score == 1000 or agent == Color.BLACK and successor_score == -1000:
+                return action, successor_score
+            successor_score = GAMMA ** d * successor_score
             if agent == Color.WHITE:
                 if val is None or successor_score > val:
                     val = successor_score
@@ -132,8 +134,8 @@ if __name__ == '__main__':
     import pstats
 
     with cProfile.Profile() as pr:
-        c = ChessState(SMALL_GAME)
-        search_agent = AlphaBetaAgent(depth=6)
+        c = ChessState(DEFAULT_BOARD)
+        search_agent = AlphaBetaAgent(depth=4)
         best_move = search_agent.get_action(c, Color.WHITE)
 
     stats = pstats.Stats(pr)
