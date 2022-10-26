@@ -30,8 +30,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = ChessState(DEFAULT_BOARD)
-search_agent = AlphaBetaAgent(3)
+chess_state = ChessState(SMALL_GAME)
+search_agent = AlphaBetaAgent(depth=4)
 auto_move = True
 player = Color.WHITE
 
@@ -110,8 +110,12 @@ while is_running:
                 move = Action(start_square, end_square)
                 if move in chess_state.get_legal_moves(player):
                     chess_state = chess_state.get_successor_state(move, player)
-                    print(chess_state)
-                    print(move)
+                    # print(chess_state)
+                    # print(move)
+                    print(chess_state.evaluate(player), chess_state.evaluate(player.get_opposite()))
+                    print(chess_state.is_end_state(player), chess_state.is_end_state(player.get_opposite()))
+                    print(chess_state.is_win(), chess_state.is_lose())
+
                     rects = []
                     pieces = []
                     for i in range(8):
@@ -164,19 +168,20 @@ while is_running:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         player = player.get_opposite()
-    rects = []
-    pieces = []
-    for i in range(8):
-        for j in range(8):
-            if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
-                rects.append(
-                    pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-                )
-                pieces.append(
-                    pygame.transform.smoothscale(
-                        pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
-                        (SQUARE_SIZE, SQUARE_SIZE))
-                )
+    if not selected:
+        rects = []
+        pieces = []
+        for i in range(8):
+            for j in range(8):
+                if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
+                    rects.append(
+                        pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                    )
+                    pieces.append(
+                        pygame.transform.smoothscale(
+                            pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
+                            (SQUARE_SIZE, SQUARE_SIZE))
+                    )
 
 pygame.quit()
 print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())

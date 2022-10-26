@@ -19,6 +19,31 @@ DEFAULT_BOARD = [
     [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN,
      Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK]
 ]
+
+ITALIAN_BOARD = [
+    [Piece.BLACK_ROOK, EMT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN, Piece.BLACK_KING, EMT,
+     Piece.BLACK_KNIGHT, Piece.BLACK_ROOK],
+    [Piece.BLACK_PAWN for _ in range(4)] + [EMT] + [Piece.BLACK_PAWN for _ in range(3)],
+    [EMT, EMT, Piece.BLACK_KNIGHT, EMT, EMT, EMT, EMT, EMT],
+    [EMT, EMT, Piece.BLACK_BISHOP, EMT, Piece.BLACK_PAWN, EMT, EMT, EMT],
+    [EMT, EMT, Piece.WHITE_BISHOP, EMT, Piece.WHITE_PAWN, EMT, EMT, EMT],
+    [EMT, EMT, EMT, EMT, EMT, Piece.WHITE_KNIGHT, EMT, EMT],
+    [Piece.WHITE_PAWN for _ in range(4)] + [EMT] + [Piece.WHITE_PAWN for _ in range(3)],
+    [Piece.WHITE_ROOK, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_QUEEN, Piece.WHITE_KING, EMT,
+     EMT, Piece.WHITE_ROOK]
+]
+
+NUM_PAWNS = 2
+SMALL_GAME = [
+    [EMT, EMT, EMT, EMT, Piece.BLACK_KING, EMT, EMT, EMT],
+    [Piece.BLACK_PAWN for _ in range(NUM_PAWNS)] + [EMT for _ in range(8 - NUM_PAWNS)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+    [Piece.WHITE_PAWN for _ in range(NUM_PAWNS)] + [EMT for _ in range(8 - NUM_PAWNS)],
+    [EMT, EMT, EMT, EMT, Piece.WHITE_KING, EMT, EMT, EMT]
+]
 # up, down, left, right, dul, dur, ddl, ddr
 move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 dist_to_edge = []
@@ -55,7 +80,6 @@ class ChessState:
                 legal_moves.extend(
                     [action for action in self.get_possible_moves(piece, (i, j), agent) if
                      piece.is_color(agent) and self.is_legal_move(action, agent)]
-                     # self.is_legal_move(action, agent) and piece.is_color(agent)]
                 )
         return legal_moves
 
@@ -102,37 +126,40 @@ class ChessState:
             spiece = self.pieces[action.start_pos[0]][action.start_pos[1]]
             new_white_king_pos = self.white_king_pos
             new_black_king_pos = self.black_king_pos
+            new_wcl, new_wcr, new_bcl, new_bcr = self.wcl, self.wcr, self.bcl, self.bcr
             if spiece.is_king():
-                self.__update_castling(action)
+                new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
                 if spiece.is_white():
                     new_white_king_pos = action.end_pos
                 else:
                     new_black_king_pos = action.end_pos
             if spiece.is_rook():
-                self.__update_castling(action)
+                new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
 
-            return ChessState(new_pieces, self.wcl, self.wcr, self.bcl, self.bcr, white_king_pos=new_white_king_pos,
+            return ChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr, white_king_pos=new_white_king_pos,
                               black_king_pos=new_black_king_pos)
         else:
             raise ValueError("Bruh")
 
     def __update_castling(self, action):
         si, sj = action.start_pos
+        new_wcl, new_wcr, new_bcl, new_bcr = self.wcl, self.wcr, self.bcl, self.bcr
         # if king moves, no more castling
         if self.pieces[si][sj].is_king():
             if self.pieces[si][sj].is_white():
-                self.wcl = self.wcr = False
+                new_wcl = new_wcr = False
             else:
-                self.bcl = self.bcr = False
+                new_bcl = new_bcr = False
         # if rook moves, no more castling that way
         elif action.start_pos == (0, 0):
-            self.bcl = False
+            new_bcl = False
         elif action.start_pos == (0, 7):
-            self.bcr = False
+            new_bcr = False
         elif action.start_pos == (7, 0):
-            self.wcl = False
+            new_wcl = False
         elif action.start_pos == (7, 7):
-            self.wcr = False
+            new_wcr = False
+        return new_wcl, new_wcr, new_bcl, new_bcr
 
     # move the piece in sloc to eloc regardless of if it's legal
     def __move_loc_to_loc(self, sloc, eloc) -> list[list[Piece]]:
@@ -159,6 +186,64 @@ class ChessState:
                 new_pieces[ei][ej - 2] = EMT
 
         return new_pieces
+
+    def __faster_is_legal(self, action: Action, agent: Color) -> bool:
+        sloc = action.start_pos
+        eloc = action.end_pos
+        si, sj = sloc
+        ei, ej = eloc
+
+        spiece = self.get_piece_at(sloc)
+        epiece = self.get_piece_at(eloc)
+
+        # moving piece onto own piece
+        if epiece != EMT and epiece.is_color(agent):
+            return False
+
+        # only knights can jump, i.e. other pieces can't move through other pieces
+        if not self.get_piece_at(sloc).is_knight():
+            num_in_between = max(abs(ei - si), abs(ej - sj))
+            di = (ei - si) // num_in_between
+            dj = (ej - sj) // num_in_between
+            for idx in range(1, num_in_between):
+                piece_in_between = self.get_piece_at((si + di * idx, sj + dj * idx))
+                if piece_in_between != EMT:
+                    return False
+
+        # pawns can take diagonally, but not directly
+        if spiece.is_pawn():
+            if abs(ei - si) == 1 and abs(ej - sj) == 1:
+                if epiece == EMT or epiece.is_white() == spiece.is_white():
+                    return False
+            elif epiece != EMT:
+                return False
+
+        # castling, might break if moved below check
+        if spiece.is_king() and abs(ej - sj) == 2:
+            if spiece.is_white():
+                if ej - sj == 2 and not self.wcr or ej - sj == -2 and not self.wcl:
+                    return False
+            else:
+                if ej - sj == 2 and not self.bcr or ej - sj == -2 and not self.bcl:
+                    return False
+            new_end = (ei, sj + (ej - sj) // 2)
+            if not self.is_legal_move(Action(sloc, new_end), agent):
+                return False
+            if self.is_in_check(self.pieces, spiece.get_color(), sloc):
+                return False
+
+        # move can't result in check
+        if agent == Color.WHITE:
+            king_pos = self.white_king_pos
+        else:
+            king_pos = self.black_king_pos
+        if king_pos == sloc:
+            king_pos = eloc
+        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos):
+            return False
+
+        # it's a legal move!
+        return True
 
     def is_legal_move(self, action: Action, agent: Color) -> bool:
         sloc = action.start_pos
@@ -363,15 +448,24 @@ class ChessState:
 
     def evaluate(self, agent) -> float:
         if self.is_end_state(agent):
-            return 1000 if self.is_win() else 0 - 1000 if self.is_lose() else 0
-        return self.__get_material()
+            return (1000 if self.is_win() else 0) - (1000 if self.is_lose() else 0)
+        return self.__get_material() + self.__pawn_distance() * 0.1 + self.__king_activity() * 0.05
 
-    def __get_king_pos(self, color: Color) -> tuple[int, int]:
+    def __pawn_distance(self):
+        total = 0
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):
-                if piece.is_king() and piece.is_color(color):
-                    return i, j
-        raise ValueError(f"Where the heck is the {color} king???")
+                if piece.is_pawn():
+                    if piece.is_white():
+                        total += (7 - i)
+                    else:
+                        total -= i
+        return total
+
+    def __king_activity(self):
+        wi, wj = self.white_king_pos
+        bi, bj = self.black_king_pos
+        return -abs(4 - wi) - abs(4 - wj) + abs(4 - bi) + abs(4 - bj)
 
     def __str__(self) -> str:
         result = "-" * 23 + "\n"
@@ -387,53 +481,26 @@ def run_with_seed(seed, do_print=False):
     # return win, loss, draw for white
     random.seed(seed)
     c = ChessState(DEFAULT_BOARD)
-    moves = 0
+    a = Color.WHITE
     if do_print:
         print(c)
-    while moves < 100:
-        if moves % 2 == 0:
-            a = Color.WHITE
-        else:
-            a = Color.BLACK
+    for _ in range(100):
         if c.is_end_state(a):
             break
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
         if do_print:
             print(c)
-        moves += 1
+        a = a.get_opposite()
     if do_print:
         print(c.is_win(), c.is_lose(), c.is_draw())
     return c.is_win(), c.is_lose(), c.is_draw()
 
 
-def get_interesting_seeds(n):
-    for seed in range(n):
-        if seed % 10 == 0:
-            print(seed)
-        try:
-            win, loss, draw = run_with_seed(seed)
-            if win or loss:
-                print(seed, win, loss, draw)
-        except ValueError as ve:
-            if str(ve) != "you can't take the king what??":
-                raise
-
-
-def run_random():
-    seed = int(1000 * random.random())
-    run_with_seed(seed, True)
-    print(seed)
-
-
 if __name__ == '__main__':
-    # t1 = Timer('run_with_seed(26)', 'from __main__ import run_with_seed')
-    # print(t1.timeit(number=10))
-
     import cProfile
     import pstats
 
     with cProfile.Profile() as pr:
-        # get_interesting_seeds(10)
         run_with_seed(1, True)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
@@ -443,4 +510,6 @@ if __name__ == '__main__':
 Moves left:
     en-passant: mehhhh
     choosing promotion: auto-queen is easier hehe
+    not finding mate
+    castling left is broken, can move trhough horse
 """
