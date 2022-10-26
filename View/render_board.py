@@ -31,7 +31,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
-search_agent = AlphaBetaAgent(3)
+search_agent = AlphaBetaAgent(depth=4)
+auto_move = False
 player = Color.WHITE
 
 image_file_by_piece = {
@@ -48,6 +49,7 @@ image_file_by_piece = {
     Piece.BLACK_QUEEN: "./pieces_images/black_queen.png",
     Piece.BLACK_KING: "./pieces_images/black_king.png",
 }
+
 
 rects = []
 pieces = []
@@ -108,8 +110,12 @@ while is_running:
                 move = Action(start_square, end_square)
                 if move in chess_state.get_legal_moves(player):
                     chess_state = chess_state.get_successor_state(move, player)
-                    print(chess_state)
-                    print(move)
+                    # print(chess_state)
+                    # print(move)
+                    print(chess_state.evaluate(player), chess_state.evaluate(player.get_opposite()))
+                    print(chess_state.is_end_state(player), chess_state.is_end_state(player.get_opposite()))
+                    print(chess_state.is_win(), chess_state.is_lose())
+
                     rects = []
                     pieces = []
                     for i in range(8):
@@ -127,7 +133,7 @@ while is_running:
                 else:
                     # print(move, [str(m) for m in chess_state.get_legal_moves(player) if
                     #              m.start_pos == start_square])
-                    print(move, chess_state.get_legal_moves(player))
+                    # print(move, [str(m) for m in chess_state.ge(player)])
                     rects[selected].x = start_square[1] * SQUARE_SIZE
                     rects[selected].y = start_square[0] * SQUARE_SIZE
                 start_square = None
@@ -158,23 +164,24 @@ while is_running:
 
     clock.tick(60)
     # sleep(0.5)
-    if True: # player == Color.BLACK:
+    if auto_move:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         player = player.get_opposite()
-    rects = []
-    pieces = []
-    for i in range(8):
-        for j in range(8):
-            if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
-                rects.append(
-                    pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-                )
-                pieces.append(
-                    pygame.transform.smoothscale(
-                        pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
-                        (SQUARE_SIZE, SQUARE_SIZE))
-                )
+    if not selected:
+        rects = []
+        pieces = []
+        for i in range(8):
+            for j in range(8):
+                if chess_state.get_piece_at((i, j)) != Piece.EMPTY:
+                    rects.append(
+                        pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+                    )
+                    pieces.append(
+                        pygame.transform.smoothscale(
+                            pygame.image.load(image_file_by_piece[chess_state.get_piece_at((i, j))]),
+                            (SQUARE_SIZE, SQUARE_SIZE))
+                    )
 
 pygame.quit()
 print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())

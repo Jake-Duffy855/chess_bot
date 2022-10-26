@@ -1,10 +1,10 @@
 from Game.Color import *
-from Game.Action import *
 
 from enum import Enum
 
 STRING_REPS = ['♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', " "]
 MATERIAL_VALUE = [1, 3, 3, 5, 9, 0, -1, -3, -3, -5, -9, 0, 0]
+SLIDING_NUMBERS = {2, 3, 4}
 
 
 class Piece(Enum):
@@ -63,6 +63,9 @@ class Piece(Enum):
 
     def is_empty(self):
         return self.value == 12
+
+    def is_sliding(self):
+        return self.value % 6 in SLIDING_NUMBERS
 
     def __str__(self):
         return STRING_REPS[self.value]
