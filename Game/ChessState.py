@@ -47,14 +47,14 @@ SMALL_GAME = [
 # up, down, left, right, dul, dur, ddl, ddr
 move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 dist_to_edge = []
-for i in range(8):
+for gi in range(8):
     dist_to_edge.append([])
-    for j in range(8):
-        u = i
-        d = 7 - i
-        l = j
-        r = 7 - j
-        dist_to_edge[i].append([
+    for gj in range(8):
+        u = gi
+        d = 7 - gi
+        l = gj
+        r = 7 - gj
+        dist_to_edge[gi].append([
             u, d, l, r, min(u, l), min(u, r), min(d, l), min(d, r)
         ])
 
@@ -253,69 +253,17 @@ class ChessState:
         ki, kj = king_pos
         opp = agent.get_opposite()
         ## just do for loop for sliding moves!!!!!!
-        # left
-        for dj in range(1, kj + 1):
-            piece = new_pieces[ki][kj - dj]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # right
-        for dj in range(1, 8 - kj):
-            piece = new_pieces[ki][kj + dj]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # up
-        for di in range(1, ki + 1):
-            piece = new_pieces[ki - di][kj]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # down
-        for di in range(1, 8 - ki):
-            piece = new_pieces[ki + di][kj]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_rook() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # diag up right (dur)
-        for d in range(1, min(ki + 1, 8 - kj)):
-            piece = new_pieces[ki - d][kj + d]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # diag up left (dul)
-        for d in range(1, min(ki + 1, kj + 1)):
-            piece = new_pieces[ki - d][kj - d]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # diag down right (ddr)
-        for d in range(1, min(8 - ki, 8 - kj)):
-            piece = new_pieces[ki + d][kj + d]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
-                    return True
-                else:
-                    break
-        # diag down left (ddl)
-        for d in range(1, min(8 - ki, kj + 1)):
-            piece = new_pieces[ki + d][kj - d]
-            if piece != EMT:
-                if piece.is_color(opp) and (piece.is_bishop() or piece.is_queen()):
-                    return True
-                else:
+        for direction in range(0, 8):
+            for dist in range(dist_to_edge[ki][kj][direction]):
+                di, dj = move_diffs[direction]
+                new_i = ki + di * (dist + 1)
+                new_j = kj + dj * (dist + 1)
+                target_piece = new_pieces[new_i][new_j]
+                if target_piece != EMT:
+                    if target_piece.is_color(opp) and (
+                            target_piece.is_queen() or direction < 4 and target_piece.is_rook() or direction >= 4 and
+                            target_piece.is_bishop()):
+                        return True
                     break
 
         # check for pawns

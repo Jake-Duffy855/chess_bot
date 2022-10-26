@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     with cProfile.Profile() as pr:
         c = ChessState(DEFAULT_BOARD)
-        search_agent = AlphaBetaAgent(depth=4)
+        search_agent = AlphaBetaAgent(depth=3)
         best_move = search_agent.get_action(c, Color.WHITE)
 
     stats = pstats.Stats(pr)
