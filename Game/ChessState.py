@@ -129,12 +129,10 @@ class ChessState:
             result = []
             for di in range(-1, 2):
                 for dj in range(-1, 2):
-                    if 0 <= (i + di) < 8 and 0 <= (j + dj) < 8 and not self.pieces[i + di][j + dj].is_color(
-                            piece.get_color()):
+                    if 0 <= (i + di) < 8 and 0 <= (j + dj) < 8 and not self.pieces[i + di][j + dj].is_color(agent):
                         result.append(Action(loc, (i + di, j + dj)))
-            # add caslting back in
-            # if j <
-            #     + [Action(loc, (i, j + 2)), Action(loc, (i, j - 2))]
+            # caslting back in
+            result.extend([Action(loc, (i, j + 2)), Action(loc, (i, j - 2))])
             return result
         return []
 
@@ -223,9 +221,14 @@ class ChessState:
                 if ej - sj == 2 and not self.bcr or ej - sj == -2 and not self.bcl:
                     return False
             new_end = (ei, sj + (ej - sj) // 2)
-            if not self.is_legal_move(Action(sloc, new_end), agent):
-                return False
-            if self.is_in_check(self.pieces, spiece.get_color(), sloc):
+            if ej - sj == 2:
+                rook_start = (si, 7)
+                rook_end = (si, 5)
+            else:
+                rook_start = (si, 0)
+                rook_end = (si, 3)
+            if not self.is_legal_move(Action(sloc, new_end), agent) or \
+                    not self.is_legal_move(Action(rook_start, rook_end), agent):
                 return False
 
         # move can't result in check
@@ -252,7 +255,7 @@ class ChessState:
         # go up, down, left, right, diagonals see if there's an attacking piece
         ki, kj = king_pos
         opp = agent.get_opposite()
-        ## just do for loop for sliding moves!!!!!!
+        # sliding moves attacking
         for direction in range(0, 8):
             for dist in range(dist_to_edge[ki][kj][direction]):
                 di, dj = move_diffs[direction]
