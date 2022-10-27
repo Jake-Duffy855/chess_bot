@@ -40,7 +40,7 @@ class Piece(Enum):
             return self.value < 6
         return 12 > self.value >= 6
 
-    def get_value(self):
+    def get_value(self) -> int:
         return MATERIAL_VALUE[self.value]
 
     def is_pawn(self):

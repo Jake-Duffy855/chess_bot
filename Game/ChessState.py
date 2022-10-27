@@ -4,6 +4,9 @@ import random
 
 EMT = Piece.EMPTY
 # count_calls = [0] * 8
+PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107,
+          109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
+          233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311]
 
 # maybe for speed up in the future use a hash from loc to piece and piece type to list of loc???
 # maybe not because there's not a lot of list searching and access is O(1) anyway
@@ -36,12 +39,12 @@ ITALIAN_BOARD = [
 NUM_PAWNS = 2
 SMALL_GAME = [
     [EMT, EMT, EMT, EMT, Piece.BLACK_KING, EMT, EMT, EMT],
-    [Piece.BLACK_PAWN for _ in range(NUM_PAWNS)] + [EMT for _ in range(8 - NUM_PAWNS)],
+    [Piece.BLACK_PAWN for _ in range(NUM_PAWNS - 2)] + [EMT for _ in range(8 - NUM_PAWNS + 2)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
-    [Piece.WHITE_PAWN for _ in range(NUM_PAWNS)] + [EMT for _ in range(8 - NUM_PAWNS)],
+    [EMT, EMT] + [Piece.WHITE_PAWN for _ in range(NUM_PAWNS - 1)] + [EMT for _ in range(8 - NUM_PAWNS - 1)],
     [EMT, EMT, EMT, EMT, Piece.WHITE_KING, EMT, EMT, EMT]
 ]
 # up, down, left, right, dul, dur, ddl, ddr
@@ -247,7 +250,7 @@ class ChessState:
         possible_moves = self.get_possible_moves(self.pieces[sloc[0]][sloc[1]], sloc, agent)
         return action in possible_moves and self.__faster_is_legal(action, agent)
 
-    def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos):
+    def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos) -> bool:
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
 
         if king_pos is None:
@@ -366,6 +369,9 @@ class ChessState:
             result += "\n"
         result += "-" * 23
         return result
+
+    def __hash__(self) -> int:
+        return self.__str__().__hash__()
 
 
 def run_with_seed(seed, do_print=False):

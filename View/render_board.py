@@ -32,7 +32,7 @@ screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
 search_agent = AlphaBetaAgent(depth=4)
-auto_move = False
+auto_move = True
 player = Color.WHITE
 
 image_file_by_piece = {
