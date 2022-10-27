@@ -1,4 +1,8 @@
 import time
+import sys
+import os
+path = os.path.dirname(os.path.abspath(__file__))[0:-5]
+sys.path.insert(0, path)
 
 import pygame
 from time import sleep

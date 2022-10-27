@@ -1,3 +1,9 @@
+import sys
+import os
+path = os.path.dirname(os.path.abspath(__file__))[0:-7]
+sys.path.insert(0, path)
+
+
 from Game.ChessState import *
 import time
 
