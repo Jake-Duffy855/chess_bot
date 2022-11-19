@@ -116,8 +116,10 @@ class JavaSearchAgent(SearchAgent):
     def get_action(self, chess_state: ChessState, agent: Color) -> Action:
         # call jar with state rep as args
         # print(str(agent))
-        p = Popen(['java', '-jar', '/Users/jakeduffy/Documents/CS4100/chess_bot/Game/java_chess.jar', str(chess_state),
-                   agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
+        p = Popen(
+            ['java', '-jar', '/Users/jakeduffy/Documents/CS4100/java_chess/out/artifacts/get_action/get_action.jar',
+             str(chess_state),
+             agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
         print(str(chess_state))
         for line in p.stdout:
             print(line.decode('utf-8'))

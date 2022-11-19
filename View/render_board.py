@@ -11,6 +11,7 @@ import random
 from Game.ChessState import *
 from Game.Piece import *
 from Search.SearchAgent import *
+from Game.JavaChessState import *
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -35,8 +36,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = ChessState(SMALL_GAME)
-search_agent = JavaSearchAgent(depth=8)
+chess_state = JavaChessState(DEFAULT_BOARD)
+search_agent = JavaSearchAgent(depth=4)
 auto_move = True
 player = Color.WHITE
 
