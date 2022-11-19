@@ -117,7 +117,7 @@ class JavaSearchAgent(SearchAgent):
         # call jar with state rep as args
         # print(str(agent))
         p = Popen(
-            ['java', '-jar', '/Users/jakeduffy/Documents/CS4100/java_chess/out/artifacts/get_action/get_action.jar',
+            ['java', '-jar', '/Users/jakeduffy/Documents/CS4100/chess_bot/java_chess/out/artifacts/get_action/get_action.jar',
              str(chess_state),
              agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
         print(str(chess_state))
