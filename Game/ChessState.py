@@ -80,6 +80,10 @@ class ChessState:
         self.en_passant = en_passant
         self.white_king_pos = white_king_pos
         self.black_king_pos = black_king_pos
+        # doesn't speed up
+        # self.white_score = self.__evaluate(Color.WHITE)
+        # self.black_score = self.__evaluate(Color.BLACK)
+
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
         legal_moves = []

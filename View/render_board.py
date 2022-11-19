@@ -1,6 +1,7 @@
 import time
 import sys
 import os
+
 path = os.path.dirname(os.path.abspath(__file__))[0:-5]
 sys.path.insert(0, path)
 
@@ -34,8 +35,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = ChessState(DEFAULT_BOARD)
-search_agent = AlphaBetaAgent(depth=4)
+chess_state = ChessState(SMALL_GAME)
+search_agent = JavaSearchAgent(depth=8)
 auto_move = True
 player = Color.WHITE
 
@@ -53,7 +54,6 @@ image_file_by_piece = {
     Piece.BLACK_QUEEN: "./pieces_images/black_queen.png",
     Piece.BLACK_KING: "./pieces_images/black_king.png",
 }
-
 
 rects = []
 pieces = []
@@ -163,12 +163,15 @@ while is_running:
     # pygame.display.flip()
     pygame.display.update()
 
-    if chess_state.is_end_state(player):
-        continue
+    # if chess_state.is_end_state(player):
+    #     for rect in rects:
+    #         rect.x += random.randint(-10, 10)
+    #         rect.y += random.randint(-10, 10)
+    #     continue
 
     clock.tick(60)
     # sleep(0.5)
-    if auto_move:
+    if auto_move and player == Color.BLACK:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         player = player.get_opposite()

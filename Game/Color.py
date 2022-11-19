@@ -10,3 +10,8 @@ class Color(Enum):
 
     def __str__(self):
         return self.name[0]
+
+    def get_string(self):
+        if self == Color.WHITE:
+            return "white"
+        return "black"
