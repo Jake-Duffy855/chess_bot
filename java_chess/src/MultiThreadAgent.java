@@ -39,6 +39,8 @@ public class MultiThreadAgent extends SearchAgent{
 
   @Override
   public Action get_action(ChessState chessState, Color agent) {
+    // maintain order of arrays please!!!!!!!!
+
     visited = 0;
     List<Action> legal_moves = chessState.get_legal_moves(agent);
     List<MultiThreads> m_threads = new ArrayList<>();
@@ -48,7 +50,7 @@ public class MultiThreadAgent extends SearchAgent{
 
     for (Action move : legal_moves) {
       // start thread
-      MultiThreads m = new MultiThreads(chessState.get_successor_state(move, agent), agent, 1);
+      MultiThreads m = new MultiThreads(chessState.get_successor_state(move, agent), agent.get_opposite(), 1);
       Thread t = new Thread(m);
       t.start();
       m_threads.add(m);
@@ -69,14 +71,15 @@ public class MultiThreadAgent extends SearchAgent{
 
     Action bestAction = null;
     double bestScore = 0;
-    for (Pair<Action, Double> p : results) {
+    for (int i = 0; i < results.size(); i++) {
+      Pair<Action, Double> p = results.get(i);
       if (bestAction == null) {
-        bestAction = p.getFirst();
+        bestAction = legal_moves.get(i);
         bestScore = p.getSecond();
       } 
       if (agent == Color.WHITE && p.getSecond() > bestScore 
       || agent == Color.BLACK && p.getSecond() < bestScore) {
-        bestAction = p.getFirst();
+        bestAction = legal_moves.get(i);
         bestScore = p.getSecond();
       }
     }

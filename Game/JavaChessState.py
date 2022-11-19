@@ -15,7 +15,7 @@ class JavaChessState(ChessState):
         for line in p.stdout:
             line = line.decode('utf-8')
             line = line[1:-1]
-            # print(line)
+            print(line)
             return [Action.from_string(action_string) for action_string in line.split("), ")]
             # return Action.from_string(line.decode('utf-8'))
 

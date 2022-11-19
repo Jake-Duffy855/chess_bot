@@ -6,16 +6,16 @@ public class SearchAgent {
   protected int visited = 0;
 
   public static void main(String[] args) {
-   args = new String[] {"-----------------------\n" +
-           "                     ♜  \n" +
-           "♜  ♟  ♟  ♚  ♞  ♗        \n" +
-           "         ♛     ♟        \n" +
-           "♟     ♟     ♟     ♟     \n" +
-           "♙           ♙        ♟  \n" +
-           "   ♕     ♙     ♘     ♙  \n" +
-           "   ♙           ♙  ♙     \n" +
-           "   ♖     ♖        ♔     \n" +
-           "-----------------------", "black", "4"};
+//   args = new String[] {"-----------------------\n" +
+//           "                     ♜  \n" +
+//           "♜  ♟  ♟  ♚  ♞  ♗        \n" +
+//           "         ♛     ♟        \n" +
+//           "♟     ♟     ♟     ♟     \n" +
+//           "♙           ♙        ♟  \n" +
+//           "   ♕     ♙     ♘     ♙  \n" +
+//           "   ♙           ♙  ♙     \n" +
+//           "   ♖     ♖        ♔     \n" +
+//           "-----------------------", "black", "5"};
     ChessState c = ChessState.fromString(args[0]);
     Color agent = Color.fromString(args[1]);
 //    System.out.println(c.get_king_pos(agent));
@@ -35,7 +35,7 @@ public class SearchAgent {
   public Action get_action(ChessState chessState, Color agent) {
     visited = 0;
     Pair<Action, Double> result = get_best_action_score(chessState, agent, null, null, 0);
-    System.out.println(visited);
+//    System.out.println(visited);
     return result.getFirst();
   }
 

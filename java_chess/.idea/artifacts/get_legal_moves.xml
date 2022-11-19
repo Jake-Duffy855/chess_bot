@@ -2,10 +2,10 @@
   <artifact type="jar" name="get_legal_moves">
     <output-path>$PROJECT_DIR$/out/artifacts/get_legal_moves</output-path>
     <root id="archive" name="get_legal_moves.jar">
-      <element id="module-output" name="java_chess" />
       <element id="directory" name="META-INF">
-        <element id="file-copy" path="$PROJECT_DIR$/out/production/java_chess/META-INF-2/META-INF/MANIFEST.MF" />
+        <element id="file-copy" path="$PROJECT_DIR$/get_legal_moves/META-INF/MANIFEST.MF" />
       </element>
+      <element id="module-output" name="java_chess" />
     </root>
   </artifact>
 </component>
