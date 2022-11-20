@@ -70,7 +70,7 @@ for gi in range(8):
 class ChessState:
 
     def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=(),
-                 white_king_pos=(7, 4), black_king_pos=(0, 4)):
+                 white_king_pos=(7, 4), black_king_pos=(0, 4), pos_by_piece=None):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
         self.wcl = wcl
@@ -80,9 +80,23 @@ class ChessState:
         self.en_passant = en_passant
         self.white_king_pos = white_king_pos
         self.black_king_pos = black_king_pos
+        if pos_by_piece:
+            self.pos_by_piece = pos_by_piece
+        else:
+            self.pos_by_piece = ChessState.get_pos_by_piece(pieces)
         # doesn't speed up
         # self.white_score = self.__evaluate(Color.WHITE)
         # self.black_score = self.__evaluate(Color.BLACK)
+
+
+    @staticmethod
+    def get_pos_by_piece(pieces: list[list[Piece]]) -> dict[Piece, list[tuple]]:
+        result = {piece: [] for piece in Piece}
+        for i, row in enumerate(pieces):
+            for j, piece in enumerate(row):
+                result[piece].append((i, j))
+        return result
+
 
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
@@ -164,9 +178,10 @@ class ChessState:
                     new_black_king_pos = action.end_pos
             if spiece.is_rook():
                 new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
+            new_pos_by_piece = self.__get_updated_pos_by_piece(action)
 
             return ChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr, white_king_pos=new_white_king_pos,
-                              black_king_pos=new_black_king_pos)
+                              black_king_pos=new_black_king_pos, pos_by_piece=new_pos_by_piece)
         else:
             raise ValueError("Bruh")
 
@@ -189,6 +204,16 @@ class ChessState:
         elif action.start_pos == (7, 7):
             new_wcr = False
         return new_wcl, new_wcr, new_bcl, new_bcr
+
+    def __get_updated_pos_by_piece(self, action: Action):
+        result = {piece: [loc for loc in locs] for (piece, locs) in self.pos_by_piece.items()}
+        spiece = self.get_piece_at(action.start_pos)
+        epiece = self.get_piece_at(action.end_pos)
+        result[spiece].remove(action.start_pos)
+        result[spiece].append(action.end_pos)
+        result[epiece].remove(action.end_pos)
+        result[Piece.EMPTY].append(action.start_pos)
+        return result
 
     # move the piece in sloc to eloc regardless of if it's legal
     def __move_loc_to_loc(self, sloc, eloc) -> list[list[Piece]]:
@@ -403,6 +428,8 @@ def run_with_seed(seed, do_print=False):
 
 
 if __name__ == '__main__':
+    c = ChessState(DEFAULT_BOARD)
+    print(c.pos_by_piece)
     import cProfile
     import pstats
 
