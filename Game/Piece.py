@@ -70,6 +70,42 @@ class Piece(Enum):
     def __str__(self):
         return STRING_REPS[self.value]
 
+    @staticmethod
+    def get_pawn_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_PAWN
+        return Piece.BLACK_PAWN
+
+    @staticmethod
+    def get_knight_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_KNIGHT
+        return Piece.BLACK_KNIGHT
+
+    @staticmethod
+    def get_bishop_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_BISHOP
+        return Piece.BLACK_BISHOP
+
+    @staticmethod
+    def get_rook_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_ROOK
+        return Piece.BLACK_ROOK
+
+    @staticmethod
+    def get_queen_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_QUEEN
+        return Piece.BLACK_QUEEN
+
+    @staticmethod
+    def get_king_by_color(color):
+        if color == Color.WHITE:
+            return Piece.WHITE_KING
+        return Piece.BLACK_KING
+
 
 if __name__ == '__main__':
     print([str(m) for m in Piece.WHITE_KING.get_possible_moves_from((4, 4))])

@@ -90,11 +90,11 @@ class ChessState:
 
 
     @staticmethod
-    def get_pos_by_piece(pieces: list[list[Piece]]) -> dict[Piece, list[tuple]]:
-        result = {piece: [] for piece in Piece}
+    def get_pos_by_piece(pieces: list[list[Piece]]) -> dict[Piece, set[tuple]]:
+        result = {piece: set() for piece in Piece}
         for i, row in enumerate(pieces):
             for j, piece in enumerate(row):
-                result[piece].append((i, j))
+                result[piece].add((i, j))
         return result
 
 
@@ -206,13 +206,13 @@ class ChessState:
         return new_wcl, new_wcr, new_bcl, new_bcr
 
     def __get_updated_pos_by_piece(self, action: Action):
-        result = {piece: [loc for loc in locs] for (piece, locs) in self.pos_by_piece.items()}
+        result = {piece: {loc for loc in locs} for (piece, locs) in self.pos_by_piece.items()}
         spiece = self.get_piece_at(action.start_pos)
         epiece = self.get_piece_at(action.end_pos)
         result[spiece].remove(action.start_pos)
-        result[spiece].append(action.end_pos)
         result[epiece].remove(action.end_pos)
-        result[Piece.EMPTY].append(action.start_pos)
+        result[spiece].add(action.end_pos)
+        result[Piece.EMPTY].add(action.start_pos)
         return result
 
     # move the piece in sloc to eloc regardless of if it's legal
@@ -269,10 +269,7 @@ class ChessState:
                 return False
 
         # move can't result in check
-        king_pos = self.__get_king_pos(agent)
-        if king_pos == sloc:
-            king_pos = eloc
-        if self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos):
+        if self.results_in_check(action, agent):
             return False
 
         # it's a legal move!
@@ -283,6 +280,73 @@ class ChessState:
         sloc = action.start_pos
         possible_moves = self.get_possible_moves(self.pieces[sloc[0]][sloc[1]], sloc, agent)
         return action in possible_moves and self.__faster_is_legal(action, agent)
+
+    def results_in_check(self, action, agent):
+        sloc = action.start_pos
+        eloc = action.end_pos
+        spiece = self.get_piece_at(sloc)
+
+        if spiece.is_king():
+            return self.__loc_attacked_by(eloc, agent.get_opposite())
+        else:
+            return self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, self.__get_king_pos(agent))
+
+    def __loc_attacked_by(self, loc, agent):
+        # is the loc attacked by agent
+        i, j = loc
+        # pawn
+        pawn = Piece.get_pawn_by_color(agent)
+        step = 1 if agent == Color.WHITE else -1
+        if (i + step, j + 1) in self.pos_by_piece[pawn] or (i + step, j - 1) in self.pos_by_piece[pawn]:
+            return True
+        # knight
+        knight = Piece.get_knight_by_color(agent)
+        for ki, kj in self.pos_by_piece[knight]:
+            if abs(i - ki) == 1 and abs(j - kj) == 2 or abs(i - ki) == 2 and abs(j - kj) == 1:
+                return True
+        # king
+        king = Piece.get_king_by_color(agent)
+        for ki, kj in self.pos_by_piece[king]:
+            if abs(i - ki) <= 1 and abs(j - kj) <= 1:
+                return True
+        # bishop
+        bishop = Piece.get_bishop_by_color(agent)
+        for bi, bj in self.pos_by_piece[bishop]:
+            if (bi, bj) == loc:
+                continue
+            if abs(i - bi) == abs(j - bj) and self.__nothing_in_between(loc, (bi, bj)):
+                return True
+        # rook
+        rook = Piece.get_rook_by_color(agent)
+        for ri, rj in self.pos_by_piece[rook]:
+            if (ri, rj) == loc:
+                continue
+            if (abs(i - ri) == 0 or abs(j - rj) == 0) and self.__nothing_in_between(loc, (ri, rj)):
+                return True
+        # queen
+        queen = Piece.get_queen_by_color(agent)
+        for qi, qj in self.pos_by_piece[queen]:
+            if (qi, qj) == loc:
+                continue
+            if (abs(i - qi) == abs(j - qj) or abs(i - qi) == 0 or abs(j - qj) == 0) \
+                    and self.__nothing_in_between(loc, (qi, qj)):
+                return True
+
+        return False
+
+    def __nothing_in_between(self, loc1, loc2):
+        # nothing in between two locs (from perspective of sliding pieces)
+        i1, j1 = loc1
+        i2, j2 = loc2
+        i_dist = abs(i1 - i2)
+        j_dist = abs(j1 - j2)
+        di = (i2 - i1) // max(i_dist, 1)
+        dj = (j2 - j1) // max(j_dist, 1)
+        for dist in range(max(i_dist - 1, j_dist - 1)):
+            if self.pieces[i1 + di * (dist + 1)][j1 + dj * (dist + 1)] != EMT:
+                return False
+        return True
+
 
     def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos) -> bool:
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
