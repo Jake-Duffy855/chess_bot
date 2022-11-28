@@ -209,10 +209,26 @@ class ChessState:
         result = {piece: {loc for loc in locs} for (piece, locs) in self.pos_by_piece.items()}
         spiece = self.get_piece_at(action.start_pos)
         epiece = self.get_piece_at(action.end_pos)
+        # fix castling!!!!!
         result[spiece].remove(action.start_pos)
         result[epiece].remove(action.end_pos)
         result[spiece].add(action.end_pos)
         result[Piece.EMPTY].add(action.start_pos)
+        # fix castling
+        if spiece.is_king() and abs(action.start_pos[1] - action.end_pos[1]) == 2:
+            diff = (action.start_pos[1] - action.end_pos[1]) // 2
+            rook = Piece.get_rook_by_color(spiece.get_color())
+            rook_start = (action.start_pos[0], 0 if diff > 0 else 7)
+            rook_end = (action.start_pos[0], action.end_pos[1] + diff)
+            result[rook].remove(rook_start)
+            result[rook].add(rook_end)
+            result[Piece.EMPTY].remove(rook_end)
+            result[Piece.EMPTY].add(rook_start)
+        # fix promotion
+        if spiece.is_pawn() and (
+                spiece.is_white() and action.end_pos[0] == 0 or spiece.is_black() and action.end_pos[0] == 7):
+            result[spiece].remove(action.end_pos)
+            result[Piece.get_queen_by_color(spiece.get_color())].add(action.end_pos)
         return result
 
     # move the piece in sloc to eloc regardless of if it's legal
@@ -268,6 +284,14 @@ class ChessState:
                     not self.is_legal_move(Action(rook_start, rook_end), agent):
                 return False
 
+
+        # king_pos = self.__get_king_pos(agent)
+        # if king_pos == sloc:
+        #     king_pos = eloc
+        # iic = self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, king_pos)
+        # ric = self.results_in_check(action, agent)
+        # if iic != ric:
+        #     print(self, action, iic, ric)
         # move can't result in check
         if self.results_in_check(action, agent):
             return False
@@ -291,51 +315,53 @@ class ChessState:
         else:
             return self.is_in_check(self.__move_loc_to_loc(sloc, eloc), agent, self.__get_king_pos(agent))
 
-    def __loc_attacked_by(self, loc, agent):
+    def __loc_attacked_by(self, loc, attacking_agent: Color, action=None):
+        # action will be move by agent.opp, action only changes outcome if check is blocked
         # is the loc attacked by agent
+        defending_agent = attacking_agent.get_opposite()
         i, j = loc
         # pawn
-        pawn = Piece.get_pawn_by_color(agent)
-        step = 1 if agent == Color.WHITE else -1
+        pawn = Piece.get_pawn_by_color(attacking_agent)
+        step = 1 if attacking_agent == Color.WHITE else -1
         if (i + step, j + 1) in self.pos_by_piece[pawn] or (i + step, j - 1) in self.pos_by_piece[pawn]:
             return True
         # knight
-        knight = Piece.get_knight_by_color(agent)
+        knight = Piece.get_knight_by_color(attacking_agent)
         for ki, kj in self.pos_by_piece[knight]:
             if abs(i - ki) == 1 and abs(j - kj) == 2 or abs(i - ki) == 2 and abs(j - kj) == 1:
                 return True
         # king
-        king = Piece.get_king_by_color(agent)
+        king = Piece.get_king_by_color(attacking_agent)
         for ki, kj in self.pos_by_piece[king]:
             if abs(i - ki) <= 1 and abs(j - kj) <= 1:
                 return True
         # bishop
-        bishop = Piece.get_bishop_by_color(agent)
+        bishop = Piece.get_bishop_by_color(attacking_agent)
         for bi, bj in self.pos_by_piece[bishop]:
             if (bi, bj) == loc:
                 continue
-            if abs(i - bi) == abs(j - bj) and self.__nothing_in_between(loc, (bi, bj)):
+            if abs(i - bi) == abs(j - bj) and self.__nothing_in_between(loc, (bi, bj), defending_agent):
                 return True
         # rook
-        rook = Piece.get_rook_by_color(agent)
+        rook = Piece.get_rook_by_color(attacking_agent)
         for ri, rj in self.pos_by_piece[rook]:
             if (ri, rj) == loc:
                 continue
-            if (abs(i - ri) == 0 or abs(j - rj) == 0) and self.__nothing_in_between(loc, (ri, rj)):
+            if (abs(i - ri) == 0 or abs(j - rj) == 0) and self.__nothing_in_between(loc, (ri, rj), defending_agent):
                 return True
         # queen
-        queen = Piece.get_queen_by_color(agent)
+        queen = Piece.get_queen_by_color(attacking_agent)
         for qi, qj in self.pos_by_piece[queen]:
             if (qi, qj) == loc:
                 continue
             if (abs(i - qi) == abs(j - qj) or abs(i - qi) == 0 or abs(j - qj) == 0) \
-                    and self.__nothing_in_between(loc, (qi, qj)):
+                    and self.__nothing_in_between(loc, (qi, qj), defending_agent):
                 return True
 
         return False
 
-    def __nothing_in_between(self, loc1, loc2):
-        # nothing in between two locs (from perspective of sliding pieces)
+    def __nothing_in_between(self, loc1, loc2, agent):
+        # nothing in between two locs (from perspective of sliding pieces) doesn't include king of agent color
         i1, j1 = loc1
         i2, j2 = loc2
         i_dist = abs(i1 - i2)
@@ -343,7 +369,8 @@ class ChessState:
         di = (i2 - i1) // max(i_dist, 1)
         dj = (j2 - j1) // max(j_dist, 1)
         for dist in range(max(i_dist - 1, j_dist - 1)):
-            if self.pieces[i1 + di * (dist + 1)][j1 + dj * (dist + 1)] != EMT:
+            curr_piece = self.pieces[i1 + di * (dist + 1)][j1 + dj * (dist + 1)]
+            if curr_piece != EMT and curr_piece != Piece.get_king_by_color(agent):
                 return False
         return True
 
@@ -485,6 +512,7 @@ def run_with_seed(seed, do_print=False):
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
         if do_print:
             print(c)
+            # print(c.pos_by_piece[Piece.BLACK_QUEEN])
         a = a.get_opposite()
     if do_print:
         print(c.is_win(), c.is_lose(), c.is_draw())
@@ -498,7 +526,10 @@ if __name__ == '__main__':
     import pstats
 
     with cProfile.Profile() as pr:
-        run_with_seed(1, True)
+        for i in range(50, 100):
+            print(i)
+            run_with_seed(i, False)
+        # run_with_seed(18, True)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()
