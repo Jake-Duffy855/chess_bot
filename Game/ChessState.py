@@ -342,6 +342,33 @@ class ChessState:
     def get_piece_at(self, loc: tuple[int, int]) -> Piece:
         return self.pieces[loc[0]][loc[1]]
 
+    def to_fen(self):
+        # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+        result = ""
+        for row in self.pieces:
+            num_empty = 0
+            for piece in row:
+                if piece == Piece.EMPTY:
+                    num_empty += 1
+                else:
+                    if num_empty > 0:
+                        result += str(num_empty)
+                        num_empty = 0
+                    result += piece.fen_value()
+            if num_empty > 0:
+                result += str(num_empty)
+            result += "/"
+        result = result[:-1] + " to_move "
+        # cast.ing
+        if not (self.wcl or self.wcr or self.bcl or self.bcr):
+            result += "-"
+        result += "K" if self.wcr else ""
+        result += "Q" if self.wcl else ""
+        result += "k" if self.bcr else ""
+        result += "q" if self.bcl else ""
+        result += " - 0 1"
+        return result
+
     def __get_material(self):
         score = 0
         for row in self.pieces:
@@ -403,14 +430,16 @@ def run_with_seed(seed, do_print=False):
 
 
 if __name__ == '__main__':
-    import cProfile
-    import pstats
-
-    with cProfile.Profile() as pr:
-        run_with_seed(1, True)
-    stats = pstats.Stats(pr)
-    stats.sort_stats(pstats.SortKey.TIME)
-    stats.print_stats()
+    # import cProfile
+    # import pstats
+    #
+    # with cProfile.Profile() as pr:
+    #     run_with_seed(1, True)
+    # stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats()
+    c = ChessState(DEFAULT_BOARD)
+    print(c.to_fen())
 
 """ Notes
 Moves left:

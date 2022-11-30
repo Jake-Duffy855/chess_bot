@@ -15,3 +15,8 @@ class Color(Enum):
         if self == Color.WHITE:
             return "white"
         return "black"
+
+    def get_fen(self):
+        if self == Color.WHITE:
+            return "w"
+        return "b"

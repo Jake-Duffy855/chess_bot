@@ -6,6 +6,8 @@ path = os.path.dirname(os.path.abspath(__file__))[0:-7]
 sys.path.insert(0, path)
 
 from Game.ChessState import *
+from Game.PythonChessState import *
+from Game.JavaChessState import *
 import time
 
 GAMMA = 0.99
@@ -131,11 +133,11 @@ if __name__ == '__main__':
     import pstats
 
     with cProfile.Profile() as pr:
-        c = ChessState(DEFAULT_BOARD)
+        c = PythonChessState(DEFAULT_BOARD)
         print(c)
-        search_agent = JavaSearchAgent(depth=4)
+        search_agent = AlphaBetaAgent(depth=4)
         agent = Color.WHITE
-        for i in range(50):
+        for i in range(10):
             best_move = search_agent.get_action(c, agent)
             c = c.get_successor_state(best_move, agent)
             print(best_move)

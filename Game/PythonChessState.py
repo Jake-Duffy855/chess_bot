@@ -3,22 +3,25 @@ from Game.Action import *
 from Game.Color import Color
 from Game.Piece import Piece
 from subprocess import Popen, PIPE, STDOUT
+import chess
 
 
-class JavaChessState(ChessState):
+class PythonChessState(ChessState):
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
-        p = Popen(
-            ['java', '-jar',
-             '/Users/jakeduffy/Documents/CS4100/chess_bot/java_chess/out/artifacts/get_legal_moves/get_legal_moves.jar',
-             str(self), agent.get_string()], stdout=PIPE, stderr=STDOUT)
-        # print(str(self))
-        for line in p.stdout:
-            line = line.decode('utf-8')
-            line = line[1:-1]
-            # print(line)
-            return [Action.from_string(action_string) for action_string in line.split("), ")]
-            # return Action.from_string(line.decode('utf-8'))
+        # print(5)
+        return [PythonChessState.chess_move_to_action(m) for m in
+                chess.Board(self.to_fen().replace("to_move", agent.get_fen())).legal_moves]
+
+    @staticmethod
+    def chess_move_to_action(move):
+        str_move = chess.Move.uci(move)
+        from_pos = (8 - int(str_move[1]), ord(str_move[0]) - 97)
+        to_pos = (8 - int(str_move[3]), ord(str_move[2]) - 97)
+        return Action(from_pos, to_pos)
+
+    # def is_legal_move(self, action: Action, agent: Color) -> bool:
+    #     return False
 
     def get_successor_state(self, action: Action, agent: Color):
         new_pieces = self._ChessState__move_loc_to_loc(action.start_pos, action.end_pos)
@@ -36,11 +39,17 @@ class JavaChessState(ChessState):
         if spiece.is_rook():
             new_wcl, new_wcr, new_bcl, new_bcr = self._ChessState__update_castling(action)
 
-        return JavaChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr,
-                              white_king_pos=new_white_king_pos,
-                              black_king_pos=new_black_king_pos)
+        return PythonChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr,
+                                white_king_pos=new_white_king_pos,
+                                black_king_pos=new_black_king_pos)
 
 
 if __name__ == '__main__':
-    j = JavaChessState(DEFAULT_BOARD)
-    print(j.get_legal_moves(Color.WHITE))
+    # b = chess.Board()
+    # for m in b.legal_moves:
+    #     print(chess.Move.uci(m))
+    # print(b)
+    # print(b.legal_moves)
+    c = PythonChessState(DEFAULT_BOARD)
+    print([chess.Move.uci(move) for move in chess.Board().legal_moves])
+    print([str(PythonChessState.chess_move_to_action(move)) for move in chess.Board().legal_moves])

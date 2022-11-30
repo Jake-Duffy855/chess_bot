@@ -6,6 +6,7 @@ path = os.path.dirname(os.path.abspath(__file__))[0:-5]
 sys.path.insert(0, path)
 
 import pygame
+from Game.PythonChessState import *
 from time import sleep
 import random
 from Game.ChessState import *
@@ -36,8 +37,8 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = JavaChessState(DEFAULT_BOARD)
-search_agent = JavaSearchAgent(depth=5)
+chess_state = PythonChessState(DEFAULT_BOARD)
+search_agent = MinimaxAgent(depth=4)
 auto_move = True
 player = Color.WHITE
 

@@ -3,6 +3,7 @@ from Game.Color import *
 from enum import Enum
 
 STRING_REPS = ['♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', " "]
+FEN_REPS = ['P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', "_"]
 MATERIAL_VALUE = [1, 3, 3, 5, 9, 0, -1, -3, -3, -5, -9, 0, 0]
 SLIDING_NUMBERS = {2, 3, 4}
 
@@ -69,6 +70,9 @@ class Piece(Enum):
 
     def __str__(self):
         return STRING_REPS[self.value]
+
+    def fen_value(self):
+        return FEN_REPS[self.value]
 
 
 if __name__ == '__main__':
