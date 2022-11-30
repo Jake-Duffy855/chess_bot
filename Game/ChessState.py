@@ -390,7 +390,7 @@ def run_with_seed(seed, do_print=False):
     a = Color.WHITE
     if do_print:
         print(c)
-    for _ in range(100):
+    for _ in range(200):
         if c.is_end_state(a):
             break
         c = c.get_successor_state(random.choice(c.get_legal_moves(a)), a)
@@ -407,7 +407,7 @@ if __name__ == '__main__':
     import pstats
 
     with cProfile.Profile() as pr:
-        run_with_seed(1, True)
+        run_with_seed(1, False)
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.print_stats()
@@ -417,5 +417,4 @@ Moves left:
     en-passant: mehhhh
     choosing promotion: auto-queen is easier hehe
     castling isi broken again add back to possible moves
-    
 """
