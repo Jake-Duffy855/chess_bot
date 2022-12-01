@@ -9,10 +9,7 @@ from Game.Action import *
 import random
 
 EMT = Piece.EMPTY
-# count_calls = [0] * 8
-PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107,
-          109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
-          233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311]
+NUM_STATES_SAVED = 20
 
 # maybe for speed up in the future use a hash from loc to piece and piece type to list of loc???
 # maybe not because there's not a lot of list searching and access is O(1) anyway
@@ -185,7 +182,7 @@ class ChessState:
             raise ValueError("Bruh")
 
     def __get_updated_last_states(self, agent: Color):
-        if len(self.last_states) < 10:
+        if len(self.last_states) < NUM_STATES_SAVED:
             return self.last_states[:] + [(self, agent)]
         return self.last_states[1:] + [(self, agent)]
 
@@ -452,9 +449,8 @@ class ChessState:
         return self.__str__().__hash__()
 
     def __eq__(self, o: object) -> bool:
-        return True
-        # return isinstance(o, ChessState) and str(o) == str(self) and\
-        #        self.wcl == o.wcl and self.wcr == o.wcr and self.bcl == o.bcl and self.bcr == o.bcr
+        return isinstance(o, ChessState) and str(o) == str(self) and\
+               self.wcl == o.wcl and self.wcr == o.wcr and self.bcl == o.bcl and self.bcr == o.bcr
 
 
 def run_with_seed(seed, do_print=False):

@@ -179,11 +179,12 @@ while is_running:
     # pygame.display.flip()
     pygame.display.update()
 
-    # if chess_state.is_end_state(player):
-    #     for rect in rects:
-    #         rect.x += random.randint(-10, 10)
-    #         rect.y += random.randint(-10, 10)
-    #     continue
+    if chess_state.is_end_state(player):
+        print("Game over")
+        # for rect in rects:
+        #     rect.x += random.randint(-10, 10)
+        #     rect.y += random.randint(-10, 10)
+        continue
 
     clock.tick(60)
     # sleep(0.5)
