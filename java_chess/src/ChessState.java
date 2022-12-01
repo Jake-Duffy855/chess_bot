@@ -1,5 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class ChessState {
   private Piece[][] pieces;
@@ -11,6 +10,8 @@ public class ChessState {
   private Pos black_king_pos;
   private boolean whc;
   private boolean bhc;
+  private List<Pair<ChessState, Color>> last_states;
+  private static final int NUM_STATES_SAVED = 20;
 
   // up, down, left, right, dul, dur, ddl, ddr
   private final Pos[] move_diffs = {new Pos(-1, 0), new Pos(1, 0), new Pos(0, -1), new Pos(0, 1), new Pos(-1, -1), new Pos(-1, 1), new Pos(1, -1), new Pos(1, 1)};
@@ -30,7 +31,7 @@ public class ChessState {
   };
 
   public ChessState(Piece[][] pieces, boolean wcl, boolean wcr, boolean bcl, boolean bcr, Pos white_king_pos,
-                    Pos black_king_pos, boolean whc, boolean bhc) {
+                    Pos black_king_pos, boolean whc, boolean bhc, List<Pair<ChessState, Color>> last_states) {
     this.pieces = pieces;
     this.wcl = wcl;
     this.wcr = wcr;
@@ -40,7 +41,9 @@ public class ChessState {
     this.black_king_pos = black_king_pos;
     this.whc = whc;
     this.bhc = bhc;
+    this.last_states = last_states;
     initDistToEdge();
+
   }
 
   public static void main(String[] args) {
@@ -68,7 +71,7 @@ public class ChessState {
   }
 
   public ChessState(Piece[][] pieces) {
-    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4), false, false);
+    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4), false, false, new ArrayList<>());
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         if (pieces[i][j].is_king()) {
@@ -195,6 +198,7 @@ public class ChessState {
       boolean new_bcl = bcl;
       boolean new_bcr = bcr;
       Pair<Boolean, Boolean> updated_has_castled = update_has_castled(action);
+      List<Pair<ChessState, Color>> new_last_states = get_updated_last_states(agent);
       if (spiece.is_king() || spiece.is_rook()) {
         boolean[] updated_castling = update_casting(action);
         new_wcl = updated_castling[0];
@@ -210,7 +214,7 @@ public class ChessState {
         }
       }
       return new ChessState(newPieces, new_wcl, new_wcr, new_bcl, new_bcr, new_white_king_pos, new_black_king_pos,
-              updated_has_castled.getFirst(), updated_has_castled.getSecond());
+              updated_has_castled.getFirst(), updated_has_castled.getSecond(), new_last_states);
     } else {
       System.out.println(this);
       System.out.println(action);
@@ -218,6 +222,16 @@ public class ChessState {
       System.out.println(get_king_pos(agent));
       throw new IllegalArgumentException("bruh");
     }
+  }
+
+  private List<Pair<ChessState, Color>> get_updated_last_states(Color agent) {
+    List<Pair<ChessState, Color>> result = new ArrayList<>();
+    result.addAll(last_states);
+    if (last_states.size() < NUM_STATES_SAVED) {
+      result.remove(0);
+    }
+    result.add(new Pair<>(this, agent));
+    return result;
   }
 
   private Pair<Boolean, Boolean> update_has_castled(Action action) {
@@ -431,8 +445,12 @@ public class ChessState {
     return get_legal_moves(Color.WHITE).size() == 0 && is_in_check(pieces, Color.WHITE, white_king_pos);
   }
 
-  public boolean is_draw() {
-    return is_stalemate() || insufficient_material();
+  public boolean is_draw(Color agent) {
+    return is_stalemate() || insufficient_material() || is_repetition(agent);
+  }
+
+  public boolean is_repetition(Color agent) {
+    return Collections.frequency(last_states, new Pair<ChessState, Color>(this, agent)) >= 3;
   }
 
   public boolean is_stalemate() {
@@ -441,7 +459,7 @@ public class ChessState {
   }
 
   public boolean is_end_state(Color agent) {
-    return get_legal_moves(agent).size() == 0;
+    return get_legal_moves(agent).size() == 0 || is_repetition(agent);
   }
 
   public boolean insufficient_material() {
@@ -565,6 +583,24 @@ public class ChessState {
     }
     result.append("-----------------------");
     return result.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ChessState that = (ChessState) o;
+    return wcl == that.wcl && wcr == that.wcr && bcl == that.bcl &&
+            bcr == that.bcr && Arrays.equals(pieces, that.pieces);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = Objects.hash(wcl, wcr, bcl, bcr, white_king_pos, black_king_pos, whc, bhc, last_states);
+    result = 31 * result + Arrays.hashCode(pieces);
+    result = 31 * result + Arrays.hashCode(move_diffs);
+    result = 31 * result + Arrays.hashCode(dist_to_edge);
+    return result;
   }
 
   public static ChessState fromString(String state) {
