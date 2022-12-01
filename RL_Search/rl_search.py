@@ -3,13 +3,22 @@ import numpy as np
 import os
 import sys
 import tqdm
+
 import random
 
 path = os.path.dirname(os.path.abspath(__file__))[0:-10]
 sys.path.insert(0, path)
 
 from Game.ChessState import *
-from Search.SearchAgent import *
+from Search import SearchAgent
+
+# class RLSearchAgent(SearchAgent):
+
+#     def __init__(self):
+#         pass
+
+#     def get_action(self, chess_state: ChessState, agent: Color):
+#         return
 
 
 MAX_TURNS = 200
@@ -18,7 +27,7 @@ ALPHA = 0.1
 GAMMA = 0.99
 
 
-class RLModel:
+class RLModel():
 
     def __init__(self):
 
@@ -40,47 +49,55 @@ class RLModel:
 
     def train(self, epochs: int):
         for epoch in range(epochs):
-            sequence = []
-
-            chess_state = ChessState(DEFAULT_BOARD)
-            agent = Color.WHITE
-
-            for turn in tqdm.tqdm(range(MAX_TURNS)):
-                if chess_state.is_end_state(agent):
-                    break
-                legal_moves = chess_state.get_legal_moves(agent)
-                if random.random() < EPSILON:
-                    action = random.choice(legal_moves)
-                    current_q = self.get_q_value(chess_state, action)
-                else:
-                    q_values = self.get_all_qs(chess_state, agent)
-                    if agent == Color.WHITE:
-                        action = legal_moves[q_values.index(max(q_values))]
-                        current_q = np.array([[max(q_values)]])
-                    else:
-                        action = legal_moves[q_values.index(min(q_values))]
-                        current_q = np.array([[min(q_values)]])
-
-                successor_state = chess_state.get_successor_state(action, agent)
-                reward = chess_state.get_reward_from(action, agent)
-
-                successor_q = max(self.get_all_qs(successor_state, agent.get_opposite()))
-
-                updated_q = current_q + ALPHA * (reward + GAMMA * successor_q - current_q)
-
-                sequence.append(({"state_input": self.vectorize_state(chess_state),
-                                  "action_input": self.vectorize_action(action)}, {"Q_value": updated_q}))
-
-                agent = agent.get_opposite()
-                chess_state = successor_state
-
-            self.model.fit(x=iter(sequence))
-
-            print(self.get_all_qs(ChessState(DEFAULT_BOARD), Color.WHITE))
+            self.train_epoch()
 
             if epoch % 20 == 0:
                 self.model.save('my_model.h5')
             print("epoch: " + str(epoch))
+
+    def train_epoch(self):
+        sequence = []
+
+        chess_state = ChessState(DEFAULT_BOARD)
+        agent = Color.WHITE
+
+        for turn in tqdm.tqdm(range(MAX_TURNS)):
+            if chess_state.is_end_state(agent):
+                break
+            legal_moves = chess_state.get_legal_moves(agent)
+            if random.random() < EPSILON:
+                action = random.choice(legal_moves)
+                current_q = self.get_q_value(chess_state, action)
+            else:
+                q_values = self.get_all_qs(chess_state, agent)
+                if agent == Color.WHITE:
+                    # print(q_values.index(max(q_values)))
+                    action = legal_moves[q_values.index(max(q_values))]
+                    current_q = np.array([[max(q_values)]])
+                else:
+                    action = legal_moves[q_values.index(min(q_values))]
+                    current_q = np.array([[min(q_values)]])
+
+            successor_state = chess_state.get_successor_state(action, agent)
+            reward = chess_state.get_reward_from(action, agent)
+
+            successor_q = max(self.get_all_qs(successor_state, agent.get_opposite()))
+
+            updated_q = current_q + ALPHA * (reward + GAMMA * successor_q - current_q)
+
+            sequence.append(({"state_input": self.vectorize_state(chess_state),
+                                "action_input": self.vectorize_action(action)}, {"Q_value": updated_q}))
+
+            agent = agent.get_opposite()
+            chess_state = successor_state
+
+        self.model.fit(x=iter(sequence))
+
+        print(self.get_all_qs(ChessState(DEFAULT_BOARD), Color.WHITE))
+
+        if epoch % 20 == 0:
+            self.model.save('my_model.h5')
+        print("epoch: " + str(epoch))
 
     def get_all_qs(self, chess_state: ChessState, agent: Color):
         legal_moves = chess_state.get_legal_moves(agent)
@@ -141,6 +158,10 @@ if __name__ == '__main__':
     model = RLModel()
     model.train(100)
 
+    model.train(100)
+    c = ChessState(DEFAULT_BOARD)
+    print(c.get_legal_moves(Color.WHITE))
+    print(model.get_all_qs(c, Color.WHITE))
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)
     # stats.print_stats()
