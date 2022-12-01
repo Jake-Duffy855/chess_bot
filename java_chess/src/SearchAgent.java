@@ -26,6 +26,8 @@ public class SearchAgent {
 //    System.out.println(agent);
     Action a = s.get_action(c, agent);
     System.out.println(a);
+    System.out.println(c.evaluate(agent));
+    c.print_evals();
   }
 
   public SearchAgent(int depth) {

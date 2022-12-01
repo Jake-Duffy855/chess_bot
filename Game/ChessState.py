@@ -1,5 +1,6 @@
 import sys
 import os
+
 path = os.path.dirname(os.path.abspath(__file__))[0:-5]
 sys.path.insert(0, path)
 
@@ -70,7 +71,7 @@ for gi in range(8):
 class ChessState:
 
     def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=(),
-                 white_king_pos=(7, 4), black_king_pos=(0, 4)):
+                 white_king_pos=(7, 4), black_king_pos=(0, 4), whc=False, bhc=False):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
         self.wcl = wcl
@@ -80,10 +81,11 @@ class ChessState:
         self.en_passant = en_passant
         self.white_king_pos = white_king_pos
         self.black_king_pos = black_king_pos
+        self.whc = whc
+        self.bhc = bhc
         # doesn't speed up
         # self.white_score = self.__evaluate(Color.WHITE)
         # self.black_score = self.__evaluate(Color.BLACK)
-
 
     def get_legal_moves(self, agent: Color) -> list[Action]:
         legal_moves = []
@@ -156,8 +158,10 @@ class ChessState:
             new_white_king_pos = self.white_king_pos
             new_black_king_pos = self.black_king_pos
             new_wcl, new_wcr, new_bcl, new_bcr = self.wcl, self.wcr, self.bcl, self.bcr
+            new_whc, new_bhc = self.whc, self.bhc
             if spiece.is_king():
                 new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
+                new_whc, new_bhc = self.__update_has_castled(action)
                 if spiece.is_white():
                     new_white_king_pos = action.end_pos
                 else:
@@ -166,7 +170,7 @@ class ChessState:
                 new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
 
             return ChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr, white_king_pos=new_white_king_pos,
-                              black_king_pos=new_black_king_pos)
+                              black_king_pos=new_black_king_pos, whc=new_whc, bhc=new_bhc)
         else:
             raise ValueError("Bruh")
 
@@ -189,6 +193,17 @@ class ChessState:
         elif action.start_pos == (7, 7):
             new_wcr = False
         return new_wcl, new_wcr, new_bcl, new_bcr
+
+    def __update_has_castled(self, action):
+        spiece = self.get_piece_at(action.start_pos)
+        new_whc, new_bhc = self.whc, self.bhc
+        # if king moves, no more castling
+        if spiece.is_king() and abs(action.end_pos[1] - action.start_pos[1]) == 2:
+            if spiece.is_white():
+                new_whc = True
+            else:
+                new_bhc = True
+        return new_whc, new_bhc
 
     # move the piece in sloc to eloc regardless of if it's legal
     def __move_loc_to_loc(self, sloc, eloc) -> list[list[Piece]]:
@@ -352,9 +367,45 @@ class ChessState:
     def evaluate(self, agent) -> float:
         if self.is_end_state(agent):
             return (1000 if self.is_win() else 0) - (1000 if self.is_lose() else 0)
-        return self.__get_material() + self.__pawn_distance() * 0.1 + self.__king_activity() * 0.05
+        return self.__get_material() + \
+               10 * self.__castle_eval() + \
+               0.1 * self.__piece_activity() + \
+               self.__get_endgame_multiplier() * (
+                       self.__pawn_distance() +
+                       self.__king_activity() * 0.2)
+
+    def __piece_activity(self):
+        # bad to have bishop and knight on back row
+        total = 0
+        for i, row in enumerate(self.pieces):
+            for j, piece in enumerate(row):
+                if piece.is_knight() or piece.is_bishop():
+                    if piece.is_white() and i == 7:
+                        total -= 1
+                    elif piece.is_black() and i == 0:
+                        total += 1
+        return total
+
+    def __castle_eval(self):
+        # one point if you have castled
+        return (1 if self.whc else 0) - (1 if self.bhc else 0)
+
+    def __get_endgame_multiplier(self):
+        # endgame evaluations are higher weighted when there are fewer pieces on the board
+        return 1 - self.__get_num_pieces() / 16
+
+    def __get_num_pieces(self):
+        # how many pieces are left on the board
+        total = 0
+        for row in self.pieces:
+            for piece in row:
+                if piece != Piece.EMPTY:
+                    total += 1
+
+        return total
 
     def __pawn_distance(self):
+        # how much further has white pushed their pawns
         total = 0
         for i, row in enumerate(self.pieces):
             for j, piece in enumerate(row):

@@ -40,6 +40,7 @@ chess_state = ChessState(DEFAULT_BOARD)
 search_agent = JavaSearchAgent(depth=4)
 auto_move = True
 player = Color.WHITE
+last_move = None
 
 image_file_by_piece = {
     Piece.WHITE_PAWN: "./pieces_images/white_pawn.png",
@@ -115,6 +116,7 @@ while is_running:
                 move = Action(start_square, end_square)
                 if move in chess_state.get_legal_moves(player):
                     chess_state = chess_state.get_successor_state(move, player)
+                    last_move = move
                     # print(chess_state)
                     # print(move)
                     print(chess_state.evaluate(player), chess_state.evaluate(player.get_opposite()))
@@ -158,6 +160,19 @@ while is_running:
         pygame.draw.rect(
             screen, (200, 40, 40, 250), pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
         )
+
+    # highlight last move
+    if last_move:
+        si, sj = last_move.start_pos
+        ei, ej = last_move.end_pos
+        pygame.draw.rect(
+            screen, (200, 200, 40, 250), pygame.Rect(sj * SQUARE_SIZE, si * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+        )
+        pygame.draw.rect(
+            screen, (200, 200, 40, 250), pygame.Rect(ej * SQUARE_SIZE, ei * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+        )
+
+    # draw pieces
     for i, r in enumerate(rects):
         screen.blit(pieces[i], r)
 
@@ -175,6 +190,7 @@ while is_running:
     if auto_move and player == Color.BLACK:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
+        last_move = best_move
         player = player.get_opposite()
     if not selected:
         rects = []

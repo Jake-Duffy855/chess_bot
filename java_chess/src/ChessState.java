@@ -9,6 +9,8 @@ public class ChessState {
   private boolean bcr;
   private Pos white_king_pos;
   private Pos black_king_pos;
+  private boolean whc;
+  private boolean bhc;
 
   // up, down, left, right, dul, dur, ddl, ddr
   private final Pos[] move_diffs = {new Pos(-1, 0), new Pos(1, 0), new Pos(0, -1), new Pos(0, 1), new Pos(-1, -1), new Pos(-1, 1), new Pos(1, -1), new Pos(1, 1)};
@@ -27,7 +29,8 @@ public class ChessState {
                   Piece.WHITE_KING, Piece.WHITE_BISHOP, Piece.WHITE_KNIGHT, Piece.WHITE_ROOK}
   };
 
-  public ChessState(Piece[][] pieces, boolean wcl, boolean wcr, boolean bcl, boolean bcr, Pos white_king_pos, Pos black_king_pos) {
+  public ChessState(Piece[][] pieces, boolean wcl, boolean wcr, boolean bcl, boolean bcr, Pos white_king_pos,
+                    Pos black_king_pos, boolean whc, boolean bhc) {
     this.pieces = pieces;
     this.wcl = wcl;
     this.wcr = wcr;
@@ -35,6 +38,8 @@ public class ChessState {
     this.bcr = bcr;
     this.white_king_pos = white_king_pos;
     this.black_king_pos = black_king_pos;
+    this.whc = whc;
+    this.bhc = bhc;
     initDistToEdge();
   }
 
@@ -63,7 +68,7 @@ public class ChessState {
   }
 
   public ChessState(Piece[][] pieces) {
-    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4));
+    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4), false, false);
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         if (pieces[i][j].is_king()) {
@@ -189,6 +194,7 @@ public class ChessState {
       boolean new_wcr = wcr;
       boolean new_bcl = bcl;
       boolean new_bcr = bcr;
+      Pair<Boolean, Boolean> updated_has_castled = update_has_castled(action);
       if (spiece.is_king() || spiece.is_rook()) {
         boolean[] updated_castling = update_casting(action);
         new_wcl = updated_castling[0];
@@ -203,7 +209,8 @@ public class ChessState {
           new_black_king_pos = action.end_pos;
         }
       }
-      return new ChessState(newPieces, new_wcl, new_wcr, new_bcl, new_bcr, new_white_king_pos, new_black_king_pos);
+      return new ChessState(newPieces, new_wcl, new_wcr, new_bcl, new_bcr, new_white_king_pos, new_black_king_pos,
+              updated_has_castled.getFirst(), updated_has_castled.getSecond());
     } else {
       System.out.println(this);
       System.out.println(action);
@@ -211,6 +218,21 @@ public class ChessState {
       System.out.println(get_king_pos(agent));
       throw new IllegalArgumentException("bruh");
     }
+  }
+
+  private Pair<Boolean, Boolean> update_has_castled(Action action) {
+    Piece spiece = get_piece_at(action.start_pos);
+    boolean new_whc = whc;
+    boolean new_bhc = bhc;
+    // if king moves, no more castling
+    if (spiece.is_king() && Math.abs(action.end_pos.y - action.start_pos.y) == 2) {
+      if (spiece.is_white()) {
+        new_whc = true;
+      } else {
+        new_bhc = true;
+      }
+    }
+    return new Pair<>(new_whc, new_bhc);
   }
 
   private boolean[] update_casting(Action action) {
@@ -228,7 +250,7 @@ public class ChessState {
         new_wcr = false;
       } else {
         new_bcl = false;
-        new_wcl = false;
+        new_bcr = false;
       }
     } else if (si == 0 && sj == 0) {
       new_bcl = false;
@@ -451,7 +473,23 @@ public class ChessState {
     if (is_end_state(agent)) {
       return (is_win() ? 1000 : 0) - (is_lose() ? 1000 : 0);
     }
-    return get_material() + pawn_distance() * 0.1 + king_activity() * 0.05;
+    return 10 * get_material() +
+            0.5 * castle_eval() +
+            0.2 * piece_activity() +
+            pawn_distance() * 0.1 +
+            get_endgame_multiplier() * (
+                    king_activity() * 0.2
+            );
+  }
+
+  public void print_evals() {
+    System.out.print(" material " + get_material());
+    System.out.print(" castle " + castle_eval());
+    System.out.print(" piece " + piece_activity());
+    System.out.print(" pawn " + pawn_distance());
+    System.out.print(" endgame " + get_endgame_multiplier());
+    System.out.print(" num " + get_num_pieces());
+    System.out.print(" king " + king_activity());
   }
 
   private double pawn_distance() {
@@ -476,7 +514,44 @@ public class ChessState {
     int wj = white_king_pos.y;
     int bi = black_king_pos.x;
     int bj = black_king_pos.y;
-    return -Math.abs(4 - wi) - Math.abs(4 - wj) + Math.abs(4 - bi) + Math.abs(4 - bj);
+    return -Math.abs(4 - wi) - Math.abs(5 - wj) + Math.abs(4 - bi) + Math.abs(4 - bj);
+  }
+
+  private double piece_activity() {
+    double total = 0;
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        Piece piece = get_piece_at(new Pos(i, j));
+        if (piece.is_knight() || piece.is_bishop()) {
+          if (piece.is_white() && i == 7) {
+            total -= 1;
+          } else if (piece.is_black() && i == 0) {
+            total += 1;
+          }
+        }
+      }
+    }
+    return total;
+  }
+
+  private double castle_eval() {
+    return (whc ? 1 : 0) - (bhc ? 1 : 0);
+  }
+
+  private double get_endgame_multiplier() {
+    return 1 - (get_num_pieces() / 32.0);
+  }
+
+  private double get_num_pieces() {
+    double total = 0;
+    for (Piece[] row : pieces) {
+      for (Piece piece : row) {
+        if (piece != Piece.EMPTY) {
+          total += 1;
+        }
+      }
+    }
+    return total;
   }
 
   public String toString() {

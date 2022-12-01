@@ -121,9 +121,13 @@ class JavaSearchAgent(SearchAgent):
              str(chess_state),
              agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
         print(str(chess_state))
+        first_line = None
         for line in p.stdout:
+            if not first_line:
+                first_line = line
             print(line.decode('utf-8'))
-            return Action.from_string(line.decode('utf-8'))
+
+        return Action.from_string(first_line.decode('utf-8'))
 
 
 if __name__ == '__main__':
