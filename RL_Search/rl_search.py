@@ -3,22 +3,13 @@ import numpy as np
 import os
 import sys
 import tqdm
-
 import random
 
 path = os.path.dirname(os.path.abspath(__file__))[0:-10]
 sys.path.insert(0, path)
 
 from Game.ChessState import *
-from Search import SearchAgent
-
-# class RLSearchAgent(SearchAgent):
-
-#     def __init__(self):
-#         pass
-
-#     def get_action(self, chess_state: ChessState, agent: Color):
-#         return
+from Search.SearchAgent import *
 
 
 MAX_TURNS = 200
@@ -27,7 +18,7 @@ ALPHA = 0.1
 GAMMA = 0.99
 
 
-class RLModel():
+class RLModel:
 
     def __init__(self):
 
@@ -85,6 +76,8 @@ class RLModel():
 
             self.model.fit(x=iter(sequence))
 
+            print(self.get_all_qs(ChessState(DEFAULT_BOARD), Color.WHITE))
+
             if epoch % 20 == 0:
                 self.model.save('my_model.h5')
             print("epoch: " + str(epoch))
@@ -119,13 +112,25 @@ class RLModel():
         return result
 
     def vectorize_action(self, action: Action):
-        one_hot = [[[0, 0]] * 8] * 8
+        one_hot = np.zeros(shape=(8, 8, 2))
         one_hot[action.start_pos[0]][action.start_pos[1]][0] = 1
         one_hot[action.end_pos[0]][action.end_pos[1]][1] = 1
 
-        result = np.array(one_hot)
-        result = np.expand_dims(result, 0)
+        result = np.expand_dims(one_hot, 0)
         return result
+
+
+class RLSearchAgent(SearchAgent):
+
+    def __init__(self, model: RLModel):
+        super(RLSearchAgent, self).__init__(0)
+        self.model = model
+
+    def set_model_from_file(self, filename):
+        pass
+
+    def get_action(self, chess_state: ChessState, agent: Color):
+        return
 
 
 if __name__ == '__main__':
@@ -134,7 +139,8 @@ if __name__ == '__main__':
     #
     # with cProfile.Profile() as pr:
     model = RLModel()
-    model.train(10)
+    model.train(100)
+
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)
     # stats.print_stats()
