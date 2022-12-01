@@ -12,6 +12,7 @@ from Game.ChessState import *
 from Game.Piece import *
 from Search.SearchAgent import *
 from Game.JavaChessState import *
+from RL_Search.rl_search import *
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -24,6 +25,13 @@ SCREEN_HEIGHT = SCREEN_WIDTH
 
 SQUARE_SIZE = SCREEN_HEIGHT // 8
 
+chess_state = ChessState(DEFAULT_BOARD)
+model = RLModel()
+model.train(5)
+search_agent = RLSearchAgent(model)
+auto_move = True
+player = Color.WHITE
+
 pygame.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -35,11 +43,6 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
          range((h + ts - 1) // ts)]
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
-
-chess_state = ChessState(DEFAULT_BOARD)
-search_agent = JavaSearchAgent(depth=4)
-auto_move = True
-player = Color.WHITE
 
 image_file_by_piece = {
     Piece.WHITE_PAWN: "./pieces_images/white_pawn.png",
@@ -170,9 +173,9 @@ while is_running:
     #         rect.y += random.randint(-10, 10)
     #     continue
 
-    clock.tick(60)
+    clock.tick(5)
     # sleep(0.5)
-    if auto_move and player == Color.BLACK:
+    if auto_move:  # and player == Color.BLACK:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         player = player.get_opposite()
