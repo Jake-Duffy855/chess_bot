@@ -2,6 +2,7 @@ import keras as ks
 import numpy as np
 import os
 import sys
+import tqdm
 import random
 path = os.path.dirname(os.path.abspath(__file__))[0:-10]
 sys.path.insert(0, path)
@@ -53,7 +54,7 @@ class RLModel():
             chess_state = ChessState(DEFAULT_BOARD)
             agent = Color.WHITE
 
-            for turn in range(MAX_TURNS):
+            for turn in tqdm.tqdm(range(MAX_TURNS)):
                 if chess_state.is_end_state(agent):
                     break
                 legal_moves = chess_state.get_legal_moves(agent)
@@ -86,14 +87,14 @@ class RLModel():
 
             if epoch % 20 == 0:
                 self.model.save('my_model.h5')
-            print(epoch)
+            print("epoch: " + str(epoch))
 
 
 
     def get_q_value(self, chess_state: ChessState, action: Action):
         one_hot_state = self.vectorize_state(chess_state)
         one_hot_action = self.vectorize_action(action)
-        return self.model.predict({"state_input": one_hot_state, "action_input": one_hot_action})['Q_value']
+        return self.model.predict({"state_input": one_hot_state, "action_input": one_hot_action}, verbose=0)['Q_value']
 
 
 
