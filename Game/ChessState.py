@@ -170,6 +170,12 @@ class ChessState:
         else:
             raise ValueError("Bruh")
 
+    def get_reward_from(self, action: Action, agent: Color):
+        successor_state = self.get_successor_state(action, agent)
+        if successor_state.is_end_state(agent.get_opposite()):
+            return (1000 if self.is_win() else 0) - (1000 if self.is_lose() else 0)
+        return -1 * self.get_piece_at(action.end_pos).get_value()
+
     def __update_castling(self, action):
         si, sj = action.start_pos
         new_wcl, new_wcr, new_bcl, new_bcr = self.wcl, self.wcr, self.bcl, self.bcr
