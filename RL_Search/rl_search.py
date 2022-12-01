@@ -24,7 +24,7 @@ from Search import SearchAgent
 MAX_TURNS = 200
 EPSILON = 0.25
 ALPHA = 0.1
-GAMMA = 0.9
+GAMMA = 0.99
 
 
 class RLModel():
@@ -60,16 +60,18 @@ class RLModel():
                 legal_moves = chess_state.get_legal_moves(agent)
                 if random.random() < EPSILON:
                     action = random.choice(legal_moves)
+                    current_q = self.get_q_value(chess_state, action)
                 else:
                     q_values = self.get_all_qs(chess_state, agent)
                     if agent == Color.WHITE:
                         action = legal_moves[q_values.index(max(q_values))]
+                        current_q = np.array([[max(q_values)]])
                     else:
                         action = legal_moves[q_values.index(min(q_values))]
+                        current_q = np.array([[min(q_values)]])
 
                 successor_state = chess_state.get_successor_state(action, agent)
                 reward = chess_state.get_reward_from(action, agent)
-                current_q = self.get_q_value(chess_state, action)
 
                 successor_q = max(self.get_all_qs(successor_state, agent.get_opposite()))
 
@@ -127,12 +129,12 @@ class RLModel():
 
 
 if __name__ == '__main__':
-    import cProfile
-    import pstats
-
-    with cProfile.Profile() as pr:
-        model = RLModel()
-        model.train(10)
-    stats = pstats.Stats(pr)
-    stats.sort_stats(pstats.SortKey.TIME)
-    stats.print_stats()
+    # import cProfile
+    # import pstats
+    #
+    # with cProfile.Profile() as pr:
+    model = RLModel()
+    model.train(10)
+    # stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats()
