@@ -38,7 +38,7 @@ screen.blit(background, (0, 0))
 
 chess_state = ChessState(DEFAULT_BOARD)
 search_agent = JavaSearchAgent(depth=4)
-auto_move = True
+auto_move = False
 player = Color.WHITE
 last_move = None
 
@@ -208,4 +208,4 @@ while is_running:
                     )
 
 pygame.quit()
-print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())
+print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw(agent))
