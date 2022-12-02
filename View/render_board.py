@@ -41,6 +41,7 @@ search_agent = JavaSearchAgent(depth=4)
 auto_move = True
 player = Color.WHITE
 last_move = None
+has_ended = False
 
 image_file_by_piece = {
     Piece.WHITE_PAWN: "./pieces_images/white_pawn.png",
@@ -93,7 +94,10 @@ while is_running:
             if event.key == pygame.K_ESCAPE:
                 is_running = False
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        if has_ended:
+            break
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 for i, r in enumerate(rects):
                     if r.collidepoint(event.pos):
@@ -153,6 +157,9 @@ while is_running:
                 rects[selected].x = event.pos[0] + selected_offset_x
                 rects[selected].y = event.pos[1] + selected_offset_y
 
+    if has_ended:
+        continue
+
     # draw rect
     screen.blit(background, (0, 0))
     for a in legal_moves:
@@ -193,7 +200,7 @@ while is_running:
             print("Black wins!")
         else:
             print("It's a draw!")
-        break
+        has_ended = True
     else:
         clock.tick(60)
     # sleep(0.5)
