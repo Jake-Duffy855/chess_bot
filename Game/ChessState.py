@@ -53,6 +53,18 @@ SMALL_GAME = [
     [EMT, EMT] + [Piece.WHITE_PAWN for _ in range(NUM_PAWNS - 1)] + [EMT for _ in range(8 - NUM_PAWNS - 1)],
     [EMT, EMT, EMT, EMT, Piece.WHITE_KING, EMT, EMT, EMT]
 ]
+
+SMALL_QUEEN_GAME = [
+    [EMT, EMT, EMT, EMT, Piece.BLACK_KING, EMT, EMT, EMT],
+    [EMT, EMT] + [Piece.WHITE_QUEEN for _ in range(NUM_PAWNS - 1)] + [EMT for _ in range(8 - NUM_PAWNS - 1)],
+    [EMT, EMT, EMT, EMT, Piece.WHITE_KING, EMT, EMT, EMT],
+    [Piece.BLACK_PAWN for _ in range(NUM_PAWNS - 2)] + [EMT for _ in range(8 - NUM_PAWNS + 2)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+    [EMT for _ in range(8)],
+
+]
 # up, down, left, right, dul, dur, ddl, ddr
 move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 dist_to_edge = []

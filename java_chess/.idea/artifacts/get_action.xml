@@ -2,10 +2,11 @@
   <artifact type="jar" name="get_action">
     <output-path>$PROJECT_DIR$/out/artifacts/get_action</output-path>
     <root id="archive" name="get_action.jar">
+      <element id="module-output" name="java_chess" />
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/get_action/META-INF/MANIFEST.MF" />
+        <element id="file-copy" path="$PROJECT_DIR$/out/artifacts/get_action/META-INF/MANIFEST.MF" />
       </element>
-      <element id="module-output" name="java_chess" />
     </root>
   </artifact>
 </component>

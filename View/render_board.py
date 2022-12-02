@@ -187,7 +187,7 @@ while is_running:
 
     clock.tick(60)
     # sleep(0.5)
-    if auto_move and player == Color.BLACK:
+    if auto_move: # and player == Color.BLACK:
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         last_move = best_move

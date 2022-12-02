@@ -473,13 +473,14 @@ public class ChessState {
     if (is_end_state(agent)) {
       return (is_win() ? 1000 : 0) - (is_lose() ? 1000 : 0);
     }
-    return 10 * get_material() +
-            0.5 * castle_eval() +
-            0.2 * piece_activity() +
-            pawn_distance() * 0.1 +
-            get_endgame_multiplier() * (
+    return 10 * get_material()
+            + 0.5 * castle_eval()
+            + 0.2 * piece_activity()
+            + 0.1 * pawn_distance()
+            + get_endgame_multiplier() * (
                     king_activity() * 0.2
-            );
+                            + pawn_distance() * 0.5
+    );
   }
 
   public void print_evals() {

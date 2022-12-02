@@ -43,27 +43,35 @@ public class SearchAgent {
 
   public Pair<Action, Double> get_best_action_score(ChessState chessState, Color agent, Double alpha, Double beta, int d) {
     visited += 1;
-    if (d >= depth || chessState.is_end_state(agent)) {
+
+    if (chessState.is_end_state(agent)) {
+      int depth_mult = 0;
+      if (!chessState.is_draw()) {
+        depth_mult = agent == Color.WHITE ? 10 : -10;
+      }
+      return new Pair<Action, Double>(null, chessState.evaluate(agent) + d * depth_mult);
+    }
+    if (d >= depth) {
       return new Pair<Action, Double>(null, chessState.evaluate(agent));
     }
+
     Color new_agent = agent.get_opposite();
     int new_depth = d + 1;
 
     List<Action> legal_actions = chessState.get_legal_moves(agent);
     Double val = null;
     Action bestAction = null;
+    ChessState bestSuccessor = null;
     for (Action action : legal_actions) {
       ChessState successor = chessState.get_successor_state(action, agent);
       double successor_score = get_best_action_score(successor, new_agent, alpha, beta, new_depth).getSecond();
-      if (agent == Color.WHITE && successor_score == 1000 || agent == Color.BLACK && successor_score == -1000) {
-        return new Pair<>(action, successor_score);
-      }
-      successor_score = Math.pow(GAMMA, depth) * successor_score;
 
       if (agent == Color.WHITE) {
-        if (val == null || successor_score > val) {
+        if (val == null || successor_score > val
+                || successor_score == val && successor.evaluate(new_agent) > bestSuccessor.evaluate(new_agent)) {
           val = successor_score;
           bestAction = action;
+          bestSuccessor = successor;
         }
         if (beta != null && val > beta) {
           return new Pair<Action, Double>(bestAction, val);
@@ -72,9 +80,11 @@ public class SearchAgent {
           alpha = val;
         }
       } else{
-        if (val == null || successor_score < val) {
+        if (val == null || successor_score < val
+                || successor_score == val && successor.evaluate(new_agent) < bestSuccessor.evaluate(new_agent)) {
           val = successor_score;
           bestAction = action;
+          bestSuccessor = successor;
         }
         if (alpha != null && val < alpha) {
           return new Pair<Action, Double>(bestAction, val);
