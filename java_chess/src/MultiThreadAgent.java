@@ -3,6 +3,7 @@ import java.util.List;
 
 public class MultiThreadAgent extends SearchAgent{
   private int MAX_THREADS;
+  protected final int MIN_SEARCHED = 10000;
 
   public MultiThreadAgent(int depth) {
     this(depth, 4);
@@ -40,51 +41,55 @@ public class MultiThreadAgent extends SearchAgent{
   @Override
   public Action get_action(ChessState chessState, Color agent) {
     // maintain order of arrays please!!!!!!!!
-
+    Action result = null;
     visited = 0;
-    List<Action> legal_moves = chessState.get_legal_moves(agent);
-    List<MultiThreads> m_threads = new ArrayList<>();
-    List<Thread> threads = new ArrayList<>();
+    while (visited < MIN_SEARCHED) {
+      visited = 0;
+      List<Action> legal_moves = chessState.get_legal_moves(agent);
+      List<MultiThreads> m_threads = new ArrayList<>();
+      List<Thread> threads = new ArrayList<>();
 
-    List<Pair<Action, Double>> results = new ArrayList<>();
+      List<Pair<Action, Double>> results = new ArrayList<>();
 
-    for (Action move : legal_moves) {
-      // start thread
-      MultiThreads m = new MultiThreads(chessState.get_successor_state(move, agent), agent.get_opposite(), 1);
-      Thread t = new Thread(m);
-      t.start();
-      m_threads.add(m);
-      threads.add(t);
-    }
-
-    for (int i = 0; i < threads.size(); i++) {
-      try {
-        threads.get(i).join();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+      for (Action move : legal_moves) {
+        // start thread
+        MultiThreads m = new MultiThreads(chessState.get_successor_state(move, agent), agent.get_opposite(), 1);
+        Thread t = new Thread(m);
+        t.start();
+        m_threads.add(m);
+        threads.add(t);
       }
-    }
-    
-    for (int i = 0; i < m_threads.size(); i++) {
-      results.add(m_threads.get(i).getResult());
-    }
 
-    Action bestAction = null;
-    double bestScore = 0;
-    for (int i = 0; i < results.size(); i++) {
-      Pair<Action, Double> p = results.get(i);
-      if (bestAction == null) {
-        bestAction = legal_moves.get(i);
-        bestScore = p.getSecond();
-      } 
-      if (agent == Color.WHITE && p.getSecond() > bestScore 
-      || agent == Color.BLACK && p.getSecond() < bestScore) {
-        bestAction = legal_moves.get(i);
-        bestScore = p.getSecond();
+      for (int i = 0; i < threads.size(); i++) {
+        try {
+          threads.get(i).join();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
-    }
 
-    return bestAction;
+      for (int i = 0; i < m_threads.size(); i++) {
+        results.add(m_threads.get(i).getResult());
+      }
+
+      Action bestAction = null;
+      double bestScore = 0;
+      for (int i = 0; i < results.size(); i++) {
+        Pair<Action, Double> p = results.get(i);
+        if (bestAction == null) {
+          bestAction = legal_moves.get(i);
+          bestScore = p.getSecond();
+        }
+        if (agent == Color.WHITE && p.getSecond() > bestScore
+                || agent == Color.BLACK && p.getSecond() < bestScore) {
+          bestAction = legal_moves.get(i);
+          bestScore = p.getSecond();
+        }
+      }
+      System.out.println(visited);
+      result = bestAction;
+    }
+    return result;
   }
 
 }

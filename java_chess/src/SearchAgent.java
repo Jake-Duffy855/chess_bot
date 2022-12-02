@@ -3,6 +3,7 @@ import java.util.List;
 public class SearchAgent {
   protected final int depth;
   protected final static double GAMMA = 0.99;
+  protected final static int MIN_SEARCHED = 10000;
   protected int visited = 0;
 
   public static void main(String[] args) {
@@ -35,9 +36,15 @@ public class SearchAgent {
   }
 
   public Action get_action(ChessState chessState, Color agent) {
+    int start_depth = 0;
     visited = 0;
-    Pair<Action, Double> result = get_best_action_score(chessState, agent, null, null, 0);
-//    System.out.println(visited);
+    Pair<Action, Double> result = null;
+    while (visited < MIN_SEARCHED) {
+      visited = 0;
+      result = get_best_action_score(chessState, agent, null, null, start_depth);
+      System.out.println(visited);
+      start_depth -= 1;
+    }
     return result.getFirst();
   }
 
