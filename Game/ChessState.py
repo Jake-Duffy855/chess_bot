@@ -357,12 +357,12 @@ class ChessState:
                not self.is_in_check(self.pieces, Color.BLACK, self.black_king_pos)
 
     def is_end_state(self, agent):
-        return not self.get_legal_moves(agent)
+        return not self.get_legal_moves(agent) or self.insufficient_material()
 
     def insufficient_material(self):
         for row in self.pieces:
             for piece in row:
-                if piece.is_king() and piece != EMT:
+                if not piece.is_king() and piece != EMT:
                     return False
         return True
 

@@ -36,7 +36,7 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = ChessState(DEFAULT_BOARD)
+chess_state = ChessState(SMALL_QUEEN_GAME)
 search_agent = JavaSearchAgent(depth=4)
 auto_move = True
 player = Color.WHITE
@@ -185,9 +185,19 @@ while is_running:
     #         rect.y += random.randint(-10, 10)
     #     continue
 
-    clock.tick(60)
+
+    if chess_state.is_end_state(player):
+        if chess_state.is_win():
+            print("White wins!")
+        elif chess_state.is_lose():
+            print("Black wins!")
+        else:
+            print("It's a draw!")
+        break
+    else:
+        clock.tick(60)
     # sleep(0.5)
-    if auto_move: # and player == Color.BLACK:
+    if auto_move and player == Color.BLACK and not chess_state.is_end_state(player):
         best_move = search_agent.get_action(chess_state, player)
         chess_state = chess_state.get_successor_state(best_move, player)
         last_move = best_move
@@ -208,4 +218,5 @@ while is_running:
                     )
 
 pygame.quit()
+print(chess_state)
 print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())
