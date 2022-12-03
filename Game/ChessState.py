@@ -18,7 +18,7 @@ PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67
 # maybe not because there's not a lot of list searching and access is O(1) anyway
 DEFAULT_BOARD = [
     [Piece.BLACK_ROOK, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_QUEEN,
-     Piece.BLACK_KING, EMT, EMT, Piece.BLACK_ROOK],
+     Piece.BLACK_KING, Piece.BLACK_BISHOP, Piece.BLACK_KNIGHT, Piece.BLACK_ROOK],
     [Piece.BLACK_PAWN for _ in range(8)],
     [EMT for _ in range(8)],
     [EMT for _ in range(8)],
