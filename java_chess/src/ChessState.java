@@ -44,17 +44,8 @@ public class ChessState {
   }
 
   public static void main(String[] args) {
-//    args = new String[] {"-----------------------\n" +
-//            "                     ♜  \n" +
-//            "♜  ♟  ♟  ♚  ♞  ♗        \n" +
-//            "         ♛     ♟        \n" +
-//            "♟     ♟     ♟     ♟     \n" +
-//            "♙           ♙        ♟  \n" +
-//            "   ♕     ♙     ♘     ♙  \n" +
-//            "   ♙           ♙  ♙     \n" +
-//            "   ♖     ♖        ♔     \n" +
-//            "-----------------------", "black"};
-    ChessState c = ChessState.fromString(args[0]);
+//    args = new String[] {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "white"};
+    ChessState c = ChessState.fromFenString(args[0]);
     Color agent = Color.fromString(args[1]);
 //    System.out.println(c.get_king_pos(agent));
 //    System.out.println(c);
@@ -80,6 +71,43 @@ public class ChessState {
         }
       }
     }
+  }
+
+  public static ChessState fromFenString(String fenString) {
+    String[] parts = fenString.split(" ");
+    String pieceString = parts[0];
+//    String turn = parts[1];
+    String castlingRights = parts[2];
+//    String enPassant = parts[3];
+//    String halfMove = parts[4];
+//    String fullMove = parts[5];
+    boolean wcl = castlingRights.contains("Q");
+    boolean wcr = castlingRights.contains("K");
+    boolean bcl = castlingRights.contains("q");
+    boolean bcr = castlingRights.contains("k");
+
+    Piece[][] pieces = new Piece[8][8];
+    Pos wkp = null;
+    Pos bkp = null;
+    int i = 0;
+    int j = 0;
+    for (char p : pieceString.toCharArray()) {
+      if (p == '/') {
+        i += 1;
+        j = 0;
+      } else if (Character.isDigit(p)) {
+        for (int idx = 0; idx < Character.getNumericValue(p); idx++) {
+          pieces[i][j] = Piece.EMPTY;
+          j += 1;
+        }
+      } else {
+        if (p == 'K') wkp = new Pos(i, j);
+        if (p == 'k') bkp = new Pos(i, j);
+        pieces[i][j] = Piece.fromFenString(p);
+        j += 1;
+      }
+    }
+    return new ChessState(pieces, wcl, wcr, bcl, bcr, wkp, bkp, false, false);
   }
 
   private void initDistToEdge() {

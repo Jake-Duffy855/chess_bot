@@ -118,7 +118,7 @@ class JavaSearchAgent(SearchAgent):
         # print(str(agent))
         p = Popen(
             ['java', '-jar', '../java_chess/out/artifacts/get_action/get_action.jar',
-             str(chess_state),
+             chess_state.to_fen(agent),
              agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
         print(str(chess_state))
         first_line = None

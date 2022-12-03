@@ -6,17 +6,8 @@ public class SearchAgent {
   protected int visited = 0;
 
   public static void main(String[] args) {
-//   args = new String[] {"-----------------------\n" +
-//           "                     ♜  \n" +
-//           "♜  ♟  ♟  ♚  ♞  ♗        \n" +
-//           "         ♛     ♟        \n" +
-//           "♟     ♟     ♟     ♟     \n" +
-//           "♙           ♙        ♟  \n" +
-//           "   ♕     ♙     ♘     ♙  \n" +
-//           "   ♙           ♙  ♙     \n" +
-//           "   ♖     ♖        ♔     \n" +
-//           "-----------------------", "black", "5"};
-    ChessState c = ChessState.fromString(args[0]);
+//   args = new String[] {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "black", "2"};
+    ChessState c = ChessState.fromFenString(args[0]);
     Color agent = Color.fromString(args[1]);
 //    System.out.println(c.get_king_pos(agent));
     int depth = Integer.parseInt(args[2]);
@@ -27,6 +18,7 @@ public class SearchAgent {
     Action a = s.get_action(c, agent);
     System.out.println(a);
     System.out.println(c.evaluate(agent));
+//    System.out.println(c);
     c.print_evals();
   }
 

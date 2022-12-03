@@ -10,7 +10,7 @@ class JavaChessState(ChessState):
     def get_legal_moves(self, agent: Color) -> list[Action]:
         p = Popen(
             ['java', '-jar', '/Users/jakeduffy/Documents/CS4100/chess_bot/java_chess/out/artifacts/get_legal_moves/get_legal_moves.jar',
-             str(self), agent.get_string()], stdout=PIPE, stderr=STDOUT)
+             self.to_fen(agent), agent.get_string()], stdout=PIPE, stderr=STDOUT)
         # print(str(self))
         for line in p.stdout:
             line = line.decode('utf-8')

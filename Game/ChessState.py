@@ -433,6 +433,34 @@ class ChessState:
         bi, bj = self.black_king_pos
         return -abs(4 - wi) - abs(4 - wj) + abs(4 - bi) + abs(4 - bj)
 
+    def to_fen(self, agent: Color):
+        # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+        result = ""
+        for row in self.pieces:
+            num_empty = 0
+            for piece in row:
+                if piece == Piece.EMPTY:
+                    num_empty += 1
+                else:
+                    if num_empty > 0:
+                        result += str(num_empty)
+                        num_empty = 0
+                    result += piece.fen_value()
+            if num_empty > 0:
+                result += str(num_empty)
+            result += "/"
+        result = result[:-1] + (" w " if agent == Color.WHITE else " b ")
+        # castling
+        if not (self.wcl or self.wcr or self.bcl or self.bcr):
+            result += "-"
+        result += "K" if self.wcr else ""
+        result += "Q" if self.wcl else ""
+        result += "k" if self.bcr else ""
+        result += "q" if self.bcl else ""
+        # ******* this should be different but it's unused ******
+        result += " - 0 1"
+        return result
+
     def __str__(self) -> str:
         result = "-" * 23 + "\n"
         for row in self.pieces:
