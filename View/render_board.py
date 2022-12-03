@@ -173,10 +173,10 @@ while is_running:
         si, sj = last_move.start_pos
         ei, ej = last_move.end_pos
         pygame.draw.rect(
-            screen, (200, 200, 40, 250), pygame.Rect(sj * SQUARE_SIZE, si * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            screen, (186, 200, 69, 1), pygame.Rect(sj * SQUARE_SIZE, si * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
         )
         pygame.draw.rect(
-            screen, (200, 200, 40, 250), pygame.Rect(ej * SQUARE_SIZE, ei * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+            screen, (186, 200, 69, 1), pygame.Rect(ej * SQUARE_SIZE, ei * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
         )
 
     # draw pieces

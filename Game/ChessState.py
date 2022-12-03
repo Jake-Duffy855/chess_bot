@@ -288,7 +288,6 @@ class ChessState:
 
     def is_in_check(self, new_pieces: list[list[Piece]], agent: Color, king_pos) -> bool:
         # Could be sped up if only the moving piece is checked and the files/diagonals that moving piece was from
-
         if king_pos is None:
             raise ValueError("you can't take the king what??")
         # go up, down, left, right, diagonals see if there's an attacking piece
