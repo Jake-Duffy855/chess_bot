@@ -478,8 +478,8 @@ public class ChessState {
             + 0.2 * piece_activity()
             + 0.1 * pawn_distance()
             + get_endgame_multiplier() * (
-                    king_activity() * 0.2
-                            + pawn_distance() * 0.5
+            king_activity() * 0.2
+                    + pawn_distance() * 0.5
     );
   }
 
@@ -536,7 +536,41 @@ public class ChessState {
   }
 
   private double castle_eval() {
-    return (whc ? 1 : 0) - (bhc ? 1 : 0);
+    double total = 0;
+    if (whc) {
+      total += 1;
+      Pos wkp = get_king_pos(Color.WHITE);
+      int num_pawns = 0;
+      int start = wkp.y < 4 ? 1 : 5;
+      int stop = wkp.y < 4 ? 4 : 8;
+      for (int j = start; j < stop; j++) {
+        Piece p = get_piece_at(new Pos(wkp.x - 1, j));
+        if (p.is_pawn() && p.is_white()) {
+          num_pawns += 1;
+        }
+      }
+      if (num_pawns < 2) {
+        total -= 2;
+      }
+    }
+    // if there are pawns on that side of the board +1, otherwise -1
+    if(bhc) {
+      total -= 1;
+      Pos bkp = get_king_pos(Color.BLACK);
+      int num_pawns = 0;
+      int start = bkp.y < 4 ? 1 : 5;
+      int stop = bkp.y < 4 ? 4 : 8;
+      for (int j = start; j < stop; j++) {
+        Piece p = get_piece_at(new Pos(bkp.x + 1, j));
+        if (p.is_pawn() && p.is_black()) {
+          num_pawns += 1;
+        }
+      }
+      if (num_pawns < 2) {
+        total += 2;
+      }
+    }
+    return total;
   }
 
   private double get_endgame_multiplier() {

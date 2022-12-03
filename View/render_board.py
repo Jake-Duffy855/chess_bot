@@ -36,7 +36,7 @@ tiles = [((x * ts, y * ts, ts, ts), c1 if (x + y) % 2 == 0 else c2) for x in ran
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 screen.blit(background, (0, 0))
 
-chess_state = ChessState(SMALL_QUEEN_GAME)
+chess_state = ChessState(DEFAULT_BOARD)
 search_agent = JavaSearchAgent(depth=4)
 auto_move = True
 player = Color.WHITE
@@ -162,11 +162,6 @@ while is_running:
 
     # draw rect
     screen.blit(background, (0, 0))
-    for a in legal_moves:
-        i, j = a.end_pos
-        pygame.draw.rect(
-            screen, (200, 40, 40, 250), pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
-        )
 
     # highlight last move
     if last_move:
@@ -177,6 +172,13 @@ while is_running:
         )
         pygame.draw.rect(
             screen, (200, 200, 40, 250), pygame.Rect(ej * SQUARE_SIZE, ei * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
+        )
+
+    # highlight legal moves
+    for a in legal_moves:
+        i, j = a.end_pos
+        pygame.draw.rect(
+            screen, (200, 40, 40, 250), pygame.Rect(j * SQUARE_SIZE, i * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE)
         )
 
     # draw pieces
