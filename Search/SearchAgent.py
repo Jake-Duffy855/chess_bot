@@ -116,10 +116,11 @@ class JavaSearchAgent(SearchAgent):
     def get_action(self, chess_state: ChessState, agent: Color) -> Action:
         # call jar with state rep as args
         # print(str(agent))
+        # print(str(chess_state.last_states))
         p = Popen(
             ['java', '-jar', '../java_chess/out/artifacts/get_action/get_action.jar',
              chess_state.to_fen(agent),
-             agent.get_string(), str(self.depth)], stdout=PIPE, stderr=STDOUT)
+             agent.get_string(), str(self.depth), str(chess_state.last_states)], stdout=PIPE, stderr=STDOUT)
         print(str(chess_state))
         first_line = None
         for line in p.stdout:

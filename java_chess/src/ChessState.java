@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ChessState {
@@ -11,6 +12,8 @@ public class ChessState {
   private Pos black_king_pos;
   private boolean whc;
   private boolean bhc;
+  private List<String> last_states;
+  private final int NUM_STATES_SAVED = 20;
 
   // up, down, left, right, dul, dur, ddl, ddr
   private final Pos[] move_diffs = {new Pos(-1, 0), new Pos(1, 0), new Pos(0, -1), new Pos(0, 1), new Pos(-1, -1), new Pos(-1, 1), new Pos(1, -1), new Pos(1, 1)};
@@ -30,7 +33,7 @@ public class ChessState {
   };
 
   public ChessState(Piece[][] pieces, boolean wcl, boolean wcr, boolean bcl, boolean bcr, Pos white_king_pos,
-                    Pos black_king_pos, boolean whc, boolean bhc) {
+                    Pos black_king_pos, boolean whc, boolean bhc, List<String> last_states) {
     this.pieces = pieces;
     this.wcl = wcl;
     this.wcr = wcr;
@@ -40,6 +43,10 @@ public class ChessState {
     this.black_king_pos = black_king_pos;
     this.whc = whc;
     this.bhc = bhc;
+    this.last_states = new ArrayList<>();
+    if (last_states != null) {
+      this.last_states.addAll(last_states);
+    }
     initDistToEdge();
   }
 
@@ -52,6 +59,20 @@ public class ChessState {
 //    System.out.println(depth);
 //    System.out.println(agent);
     System.out.println(c.get_legal_moves(agent));
+
+//    ChessState c = new ChessState();
+//    System.out.println(c);
+//    Color agent = Color.WHITE;
+//    for (int i = 0; i < 20; i++) {
+//      if (agent == Color.WHITE) {
+//        c = c.get_successor_state(c.get_legal_moves(agent).get(c.get_legal_moves(agent).size() - 1), agent);
+//      } else {
+//        c = c.get_successor_state(c.get_legal_moves(agent).get(0), agent);
+//      }
+//      System.out.println(c);
+//      agent = agent.get_opposite();
+//      System.out.println(c.is_end_state(agent));
+//    }
   }
 
   public ChessState() {
@@ -59,7 +80,7 @@ public class ChessState {
   }
 
   public ChessState(Piece[][] pieces) {
-    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4), false, false);
+    this(pieces, true, true, true, true, new Pos(7, 4), new Pos(0, 4), false, false, null);
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         if (pieces[i][j].is_king()) {
@@ -107,7 +128,7 @@ public class ChessState {
         j += 1;
       }
     }
-    return new ChessState(pieces, wcl, wcr, bcl, bcr, wkp, bkp, false, false);
+    return new ChessState(pieces, wcl, wcr, bcl, bcr, wkp, bkp, false, false, null);
   }
 
   private void initDistToEdge() {
@@ -237,8 +258,9 @@ public class ChessState {
           new_black_king_pos = action.end_pos;
         }
       }
+
       return new ChessState(newPieces, new_wcl, new_wcr, new_bcl, new_bcr, new_white_king_pos, new_black_king_pos,
-              updated_has_castled.getFirst(), updated_has_castled.getSecond());
+              updated_has_castled.getFirst(), updated_has_castled.getSecond(), get_updated_last_moves(agent));
     } else {
       System.out.println(this);
       System.out.println(action);
@@ -246,6 +268,18 @@ public class ChessState {
       System.out.println(get_king_pos(agent));
       throw new IllegalArgumentException("bruh");
     }
+  }
+
+  public void set_last_states(List<String> last_states) {
+    // ONLY CALLED IN THE IO BETWEEN JAVA AND PYTHON
+    this.last_states = last_states;
+  }
+
+  private List<String> get_updated_last_moves(Color agent) {
+    List<String> result = new ArrayList<>(last_states);
+    if (last_states.size() >= NUM_STATES_SAVED) result.remove(0);
+    result.add(toFenString(agent));
+    return result;
   }
 
   private Pair<Boolean, Boolean> update_has_castled(Action action) {
@@ -459,8 +493,8 @@ public class ChessState {
     return get_legal_moves(Color.WHITE).size() == 0 && is_in_check(pieces, Color.WHITE, white_king_pos);
   }
 
-  public boolean is_draw() {
-    return is_stalemate() || insufficient_material();
+  public boolean is_draw(Color agent) {
+    return is_stalemate() || insufficient_material() || is_repetition(agent);
   }
 
   public boolean is_stalemate() {
@@ -469,7 +503,11 @@ public class ChessState {
   }
 
   public boolean is_end_state(Color agent) {
-    return get_legal_moves(agent).size() == 0;
+    return get_legal_moves(agent).size() == 0 || insufficient_material() || is_repetition(agent);
+  }
+
+  public boolean is_repetition(Color agent) {
+    return Collections.frequency(last_states, toFenString(agent)) >= 2;
   }
 
   public boolean insufficient_material() {

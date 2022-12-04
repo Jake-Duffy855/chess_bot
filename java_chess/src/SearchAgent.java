@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SearchAgent {
@@ -6,12 +8,14 @@ public class SearchAgent {
   protected int visited = 0;
 
   public static void main(String[] args) {
-   args = new String[] {"8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36", "black", "4"};
+//   args = new String[] {"8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36", "black", "4", "['8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36', '8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36', '8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36']"};
     ChessState c = ChessState.fromFenString(args[0]);
-    System.out.println(c);
+//    System.out.println(c);
     Color agent = Color.fromString(args[1]);
 //    System.out.println(c.get_king_pos(agent));
     int depth = Integer.parseInt(args[2]);
+    List<String> last_states = last_states_from_string(args[3]);
+    c.set_last_states(last_states);
     SearchAgent s = new MultiThreadAgent(depth);
 //    System.out.println(c);
 //    System.out.println(depth);
@@ -19,8 +23,18 @@ public class SearchAgent {
     Action a = s.get_action(c, agent);
     System.out.println(a);
     System.out.println(c.evaluate(agent));
+    System.out.println(last_states);
 //    System.out.println(c);
     c.print_evals();
+  }
+
+  public static List<String> last_states_from_string(String states) {
+    states = states.replace("['", "");
+    states = states.replace("']", "");
+    states = states.replace("[", "");
+    states = states.replace("]", "");
+    states = states.replace(",", "");
+    return new ArrayList<>(Arrays.asList(states.split("' '")));
   }
 
   public SearchAgent(int depth) {
@@ -39,7 +53,7 @@ public class SearchAgent {
 
     if (chessState.is_end_state(agent)) {
       int depth_mult = 0;
-      if (!chessState.is_draw()) {
+      if (!chessState.is_draw(agent)) {
         depth_mult = agent == Color.WHITE ? 10 : -10;
       }
       return new Pair<Action, Double>(null, chessState.evaluate(agent) + d * depth_mult);
