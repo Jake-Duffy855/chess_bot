@@ -68,6 +68,7 @@ SMALL_QUEEN_GAME = [
 # up, down, left, right, dul, dur, ddl, ddr
 move_diffs = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 dist_to_edge = []
+NUM_STATES_SAVED = 20
 for gi in range(8):
     dist_to_edge.append([])
     for gj in range(8):
@@ -83,7 +84,7 @@ for gi in range(8):
 class ChessState:
 
     def __init__(self, pieces: list[list[Piece]], wcl=True, wcr=True, bcl=True, bcr=True, en_passant=(),
-                 white_king_pos=(7, 4), black_king_pos=(0, 4), whc=False, bhc=False):
+                 white_king_pos=(7, 4), black_king_pos=(0, 4), whc=False, bhc=False, last_states=None):
         self.pieces = pieces
         self.size = (len(pieces), len(pieces[0]))
         self.wcl = wcl
@@ -95,6 +96,10 @@ class ChessState:
         self.black_king_pos = black_king_pos
         self.whc = whc
         self.bhc = bhc
+        if last_states is None:
+            self.last_states = []
+        else:
+            self.last_states = last_states
         # doesn't speed up
         # self.white_score = self.__evaluate(Color.WHITE)
         # self.black_score = self.__evaluate(Color.BLACK)
@@ -181,10 +186,17 @@ class ChessState:
             if spiece.is_rook():
                 new_wcl, new_wcr, new_bcl, new_bcr = self.__update_castling(action)
 
+            new_last_states = self.__get_new_last_states(agent)
+
             return ChessState(new_pieces, new_wcl, new_wcr, new_bcl, new_bcr, white_king_pos=new_white_king_pos,
-                              black_king_pos=new_black_king_pos, whc=new_whc, bhc=new_bhc)
+                              black_king_pos=new_black_king_pos, whc=new_whc, bhc=new_bhc, last_states=new_last_states)
         else:
             raise ValueError("Bruh")
+
+    def __get_new_last_states(self, agent: Color):
+        if len(self.last_states) < NUM_STATES_SAVED:
+            return self.last_states[:] + [self.to_fen(agent)]
+        return self.last_states[1:] + [self.to_fen(agent)]
 
     def __update_castling(self, action):
         si, sj = action.start_pos
@@ -347,8 +359,11 @@ class ChessState:
         # white has no moves and is in check
         return not self.get_legal_moves(Color.WHITE) and self.is_in_check(self.pieces, Color.WHITE, self.white_king_pos)
 
-    def is_draw(self):
-        return self.is_stalemate() or self.insufficient_material()
+    def is_draw(self, agent: Color):
+        return self.is_stalemate() or self.insufficient_material() or self.is_repetition(agent)
+
+    def is_repetition(self, agent: Color):
+        return self.last_states.count(self.to_fen(agent)) >= 2
 
     def is_stalemate(self):
         return not self.get_legal_moves(Color.WHITE) and \
@@ -357,7 +372,7 @@ class ChessState:
                not self.is_in_check(self.pieces, Color.BLACK, self.black_king_pos)
 
     def is_end_state(self, agent):
-        return not self.get_legal_moves(agent) or self.insufficient_material()
+        return not self.get_legal_moves(agent) or self.insufficient_material() or self.is_repetition(agent)
 
     def insufficient_material(self):
         for row in self.pieces:
@@ -489,8 +504,8 @@ def run_with_seed(seed, do_print=False):
             print(c)
         a = a.get_opposite()
     if do_print:
-        print(c.is_win(), c.is_lose(), c.is_draw())
-    return c.is_win(), c.is_lose(), c.is_draw()
+        print(c.is_win(), c.is_lose(), c.is_draw(a))
+    return c.is_win(), c.is_lose(), c.is_draw(a)
 
 
 if __name__ == '__main__':

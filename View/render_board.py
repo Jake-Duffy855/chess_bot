@@ -38,7 +38,7 @@ screen.blit(background, (0, 0))
 
 chess_state = ChessState(ITALIAN_BOARD)
 search_agent = JavaSearchAgent(depth=4)
-auto_move = True
+auto_move = False
 player = Color.WHITE
 last_move = None
 has_ended = False
@@ -123,9 +123,9 @@ while is_running:
                     last_move = move
                     # print(chess_state)
                     # print(move)
-                    print(chess_state.evaluate(player), chess_state.evaluate(player.get_opposite()))
-                    print(chess_state.is_end_state(player), chess_state.is_end_state(player.get_opposite()))
-                    print(chess_state.is_win(), chess_state.is_lose())
+                    # print(chess_state.evaluate(player), chess_state.evaluate(player.get_opposite()))
+                    # print(chess_state.is_end_state(player), chess_state.is_end_state(player.get_opposite()))
+                    # print(chess_state.is_win(), chess_state.is_lose())
 
                     rects = []
                     pieces = []
@@ -228,4 +228,4 @@ while is_running:
 
 pygame.quit()
 print(chess_state)
-print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw())
+print(chess_state.is_win(), chess_state.is_lose(), chess_state.is_draw(player))

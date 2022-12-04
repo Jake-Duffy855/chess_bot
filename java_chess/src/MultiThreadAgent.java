@@ -42,7 +42,6 @@ public class MultiThreadAgent extends SearchAgent{
     // maintain order of arrays please!!!!!!!!
 
     visited = 0;
-    startStateFen = chessState.toFenString(agent);
     List<Action> legal_moves = chessState.get_legal_moves(agent);
     List<MultiThreads> m_threads = new ArrayList<>();
     List<Thread> threads = new ArrayList<>();
@@ -85,8 +84,6 @@ public class MultiThreadAgent extends SearchAgent{
       }
     }
 
-    startStateFen = null;
-    System.out.println("best score: " + bestScore + bestAction);
     return bestAction;
   }
 
