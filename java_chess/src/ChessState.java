@@ -535,20 +535,6 @@ public class ChessState {
     return score;
   }
 
-  public double evaluate(Color agent) {
-    if (is_end_state(agent)) {
-      return (is_win() ? 1000 : 0) - (is_lose() ? 1000 : 0);
-    }
-    return 10 * get_material()
-            + 0.5 * castle_eval()
-            + 0.2 * piece_activity()
-            + 0.1 * pawn_distance()
-            + get_endgame_multiplier() * (
-            king_activity() * 0.2
-                    + pawn_distance() * 0.5
-    );
-  }
-
   public void print_evals() {
     System.out.print(" material " + get_material());
     System.out.print(" castle " + castle_eval());
@@ -556,7 +542,37 @@ public class ChessState {
     System.out.print(" pawn " + pawn_distance());
     System.out.print(" endgame " + get_endgame_multiplier());
     System.out.print(" num " + get_num_pieces());
-    System.out.println(" king " + king_activity());
+    System.out.print(" king " + king_activity());
+    System.out.println(" center " + get_earlygame_multiplier() * 0.2 * center_control());
+  }
+
+  public double evaluate(Color agent) {
+    if (is_end_state(agent)) {
+      return (is_win() ? 1000 : 0) - (is_lose() ? 1000 : 0);
+    }
+    return 10 * get_material()
+            + 0.5 * castle_eval()
+            + 0.3 * piece_activity()
+            + 0.2 * castling_rights()
+            + 0.1 * pawn_distance()
+            + get_earlygame_multiplier() * (
+                     center_control()
+            )
+            + get_endgame_multiplier() * (
+                    king_activity() * 0.2
+                    + pawn_distance() * 0.5
+    );
+  }
+
+  private double center_control() {
+    // this might not work but it was easier
+    // basically if your center pawns haven't moved it's bad
+    return (get_piece_at(new Pos(6, 3)).is_pawn() ? 0 : 1) + (get_piece_at(new Pos(6, 4)).is_pawn() ? 0 : 1)
+            - (get_piece_at(new Pos(1, 3)).is_pawn() ? 0 : 1) - (get_piece_at(new Pos(1, 4)).is_pawn() ? 0 : 1);
+  }
+
+  private double castling_rights() {
+    return (wcl || whc ? 1 : 0) + (wcr || whc ? 1 : 0) - (bcl || bhc ? 1 : 0) - (bcr || bhc ? 1 : 0);
   }
 
   private double pawn_distance() {
@@ -641,6 +657,10 @@ public class ChessState {
 
   private double get_endgame_multiplier() {
     return 1 - (get_num_pieces() / 32.0);
+  }
+
+  private double get_earlygame_multiplier() {
+    return (get_num_pieces() / 32.0);
   }
 
   private double get_num_pieces() {
