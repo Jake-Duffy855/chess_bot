@@ -617,6 +617,40 @@ public class ChessState {
     return total;
   }
 
+  public String toFenString(Color agent) {
+    StringBuilder result = new StringBuilder();
+    for (Piece[] row : pieces) {
+      int num_empty = 0;
+      for (Piece piece : row) {
+        if (piece == Piece.EMPTY) {
+          num_empty += 1;
+        } else {
+          if (num_empty > 0) {
+            result.append(num_empty);
+            num_empty = 0;
+          }
+          result.append(piece.get_fen_value());
+        }
+      }
+      if (num_empty > 0) {
+        result.append(num_empty);
+      }
+      result.append("/");
+    }
+    result.setLength(result.length() - 1);
+    result.append(agent == Color.WHITE ? " w " : " b ");
+    if (!(wcl && wcr && bcl && bcr)) {
+      result.append("-");
+    }
+    result.append(wcr ? "K" : "");
+    result.append(wcl ? "Q" : "");
+    result.append(bcr ? "k" : "");
+    result.append(bcl ? "q" : "");
+    // ******* this should be different but it's unused ******
+    result.append(" - 0 1");
+    return result.toString();
+  }
+
   public String toString() {
     StringBuilder result = new StringBuilder("-----------------------\n");
     for (Piece[] row : pieces) {

@@ -16,6 +16,7 @@ public enum Piece {
   private final int value;
 
   private final static char[] STRING_REPS = {'♙', '♘', '♗', '♖', '♕', '♔', '♟', '♞', '♝', '♜', '♛', '♚', ' '};
+  private final static char[] FEN_REPS = {'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', ' '};
   private final static int[] MATERIAL_VALUE = {1, 3, 3, 5, 9, 0, -1, -3, -3, -5, -9, 0, 0};
   private final static int[] SLIDING_NUMBERS = {2, 3, 4};
 
@@ -105,6 +106,10 @@ public enum Piece {
 
   public String toString() {
     return "" + STRING_REPS[value];
+  }
+
+  public char get_fen_value() {
+    return FEN_REPS[value];
   }
 
   public static Piece fromString(char c) {

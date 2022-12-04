@@ -4,10 +4,12 @@ public class SearchAgent {
   protected final int depth;
   protected final static double GAMMA = 0.99;
   protected int visited = 0;
+  protected String startStateFen;
 
   public static void main(String[] args) {
-//   args = new String[] {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "black", "2"};
+   args = new String[] {"8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36", "black", "4"};
     ChessState c = ChessState.fromFenString(args[0]);
+    System.out.println(c);
     Color agent = Color.fromString(args[1]);
 //    System.out.println(c.get_king_pos(agent));
     int depth = Integer.parseInt(args[2]);
@@ -17,7 +19,7 @@ public class SearchAgent {
 //    System.out.println(agent);
     Action a = s.get_action(c, agent);
     System.out.println(a);
-    System.out.println(c.evaluate(agent));
+    System.out.println(" bar" +c.evaluate(agent));
 //    System.out.println(c);
     c.print_evals();
   }
@@ -28,8 +30,9 @@ public class SearchAgent {
 
   public Action get_action(ChessState chessState, Color agent) {
     visited = 0;
+    startStateFen = chessState.toFenString(agent);
     Pair<Action, Double> result = get_best_action_score(chessState, agent, null, null, 0);
-//    System.out.println(visited);
+    startStateFen = null;
     return result.getFirst();
   }
 
@@ -56,7 +59,13 @@ public class SearchAgent {
     ChessState bestSuccessor = null;
     for (Action action : legal_actions) {
       ChessState successor = chessState.get_successor_state(action, agent);
-      double successor_score = get_best_action_score(successor, new_agent, alpha, beta, new_depth).getSecond();
+      double successor_score;
+      if (successor.toFenString(new_agent).equals(startStateFen)) {
+        successor_score = 0;
+        System.out.println("" +action + d);
+      } else {
+        successor_score = get_best_action_score(successor, new_agent, alpha, beta, new_depth).getSecond();
+      }
 
       if (agent == Color.WHITE) {
         if (val == null || successor_score > val
