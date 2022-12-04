@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.*;
+
 
 public class MultiThreadAgent extends SearchAgent{
   private int MAX_THREADS;
@@ -40,7 +42,7 @@ public class MultiThreadAgent extends SearchAgent{
   @Override
   public Action get_action(ChessState chessState, Color agent) {
     // maintain order of arrays please!!!!!!!!
-
+    long start_time = System.currentTimeMillis();
     visited = 0;
     List<Action> legal_moves = chessState.get_legal_moves(agent);
     List<MultiThreads> m_threads = new ArrayList<>();
@@ -83,7 +85,8 @@ public class MultiThreadAgent extends SearchAgent{
         bestScore = p.getSecond();
       }
     }
-
+    System.out.println(visited);
+    System.out.println(System.currentTimeMillis() - start_time);
     return bestAction;
   }
 

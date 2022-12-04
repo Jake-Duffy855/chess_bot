@@ -556,7 +556,7 @@ public class ChessState {
     System.out.print(" pawn " + pawn_distance());
     System.out.print(" endgame " + get_endgame_multiplier());
     System.out.print(" num " + get_num_pieces());
-    System.out.print(" king " + king_activity());
+    System.out.println(" king " + king_activity());
   }
 
   private double pawn_distance() {
