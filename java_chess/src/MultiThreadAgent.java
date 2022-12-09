@@ -42,10 +42,11 @@ public class MultiThreadAgent extends SearchAgent{
   @Override
   public Action get_action(ChessState chessState, Color agent) {
     // maintain order of arrays please!!!!!!!!
+    // something is different?????
     int startDepth = 1;
     Action bestAction = null;
     visited = 0;
-    while (visited < 10000 && startDepth > -4) {
+    while (visited < 20000 && startDepth > -4) {
       long start_time = System.currentTimeMillis();
       visited = 0;
       List<Action> legal_moves = chessState.get_legal_moves(agent);

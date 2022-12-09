@@ -1,11 +1,13 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class SearchAgent {
   protected final int depth;
   protected final static double GAMMA = 0.99;
   protected int visited = 0;
+  protected HashMap<String, Pair<Double, Integer>> visited_states;
 
   public static void main(String[] args) {
 //   args = new String[] {"8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36", "black", "4", "['8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36', '8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36', '8/3k1b2/1p4p1/pNp2p1p/PP3P1P/R2p4/1B1n1KP1/4r3 w - - 9 36']"};
@@ -39,27 +41,45 @@ public class SearchAgent {
 
   public SearchAgent(int depth) {
     this.depth = depth;
+    this.visited_states  = new HashMap<>();
   }
 
   public Action get_action(ChessState chessState, Color agent) {
     visited = 0;
     Pair<Action, Double> result = get_best_action_score(chessState, agent, null, null, 0);
-    System.out.println("score: " + result.getSecond());
+//    System.out.println("score: " + result.getSecond());
+//    visited_states = new HashMap<>();
     return result.getFirst();
   }
 
   public Pair<Action, Double> get_best_action_score(ChessState chessState, Color agent, Double alpha, Double beta, int d) {
+    String currentFen = chessState.toFenString(agent);
     visited += 1;
+
+    // if seen state before
+    if (visited_states.containsKey(currentFen) && d >= visited_states.get(currentFen).getSecond()) {
+//      System.out.println(d);
+      return new Pair<Action, Double>(null, visited_states.get(currentFen).getFirst());
+    }
+    // lookup state in saved states {state: (d_val, a, b, score)
+    // if d_val <= d: this definitely works
+    // ???? if alpha < a or b < beta ???? idk how this works with alpha beta but I'll think about it
+    // return score ????
+
 
     if (chessState.is_end_state(agent)) {
       int depth_mult = 0;
       if (!chessState.is_draw(agent)) {
         depth_mult = agent == Color.WHITE ? 10 : -10;
       }
-      return new Pair<Action, Double>(null, chessState.evaluate(agent) + d * depth_mult);
+      double eval = chessState.evaluate(agent) + d * depth_mult;
+      visited_states.put(currentFen, new Pair<>(eval, d));
+      return new Pair<Action, Double>(null, eval);
     }
     if (d >= depth) {
-      return new Pair<Action, Double>(null, chessState.evaluate(agent));
+      double eval = chessState.evaluate(agent);
+      visited_states.put(currentFen, new Pair<>(eval, d));
+      return new Pair<Action, Double>(null, eval);
     }
 
     Color new_agent = agent.get_opposite();
@@ -81,6 +101,7 @@ public class SearchAgent {
           bestSuccessor = successor;
         }
         if (beta != null && val > beta) {
+          visited_states.put(currentFen, new Pair<>(val, d));
           return new Pair<Action, Double>(bestAction, val);
         }
         if (alpha == null || val > alpha) {
@@ -94,6 +115,7 @@ public class SearchAgent {
           bestSuccessor = successor;
         }
         if (alpha != null && val < alpha) {
+          visited_states.put(currentFen, new Pair<>(val, d));
           return new Pair<Action, Double>(bestAction, val);
         }
         if (beta == null || val < beta) {
@@ -101,6 +123,7 @@ public class SearchAgent {
         }
       }
     }
+    visited_states.put(currentFen, new Pair<>(val, d));
     return new Pair<Action, Double>(bestAction, val);
   }
 }

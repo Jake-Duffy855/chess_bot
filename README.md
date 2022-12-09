@@ -11,6 +11,7 @@ depth based on states seen
   - ~~early game multiplier~~
     - ~~center control~~
     - ~~this might allow activity to be scaled up (could do this anyway)~~
+    - keep queen away
   - knights/bishops in good places
   - rooks on files and such
   - end game stuff

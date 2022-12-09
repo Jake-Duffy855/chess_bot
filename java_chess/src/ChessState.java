@@ -539,11 +539,14 @@ public class ChessState {
     System.out.print(" material " + get_material());
     System.out.print(" castle " + castle_eval());
     System.out.print(" piece " + piece_activity());
-    System.out.print(" pawn " + pawn_distance());
+    System.out.print(" castling rights " + castling_rights());
+    System.out.print(" active knights " + active_knights());
+    System.out.print(" pawn dist " + pawn_distance());
+    System.out.print(" early game " + get_earlygame_multiplier());
+    System.out.print(" center " + center_control());
     System.out.print(" endgame " + get_endgame_multiplier());
     System.out.print(" num " + get_num_pieces());
-    System.out.print(" king " + king_activity());
-    System.out.println(" center " + get_earlygame_multiplier() * 0.2 * center_control());
+    System.out.println(" king " + king_activity());
   }
 
   public double evaluate(Color agent) {
@@ -551,17 +554,34 @@ public class ChessState {
       return (is_win() ? 1000 : 0) - (is_lose() ? 1000 : 0);
     }
     return 10 * get_material()
-            + 0.5 * castle_eval()
+            + 1 * castle_eval()
             + 0.3 * piece_activity()
-            + 0.2 * castling_rights()
+            + 0.3 * castling_rights()
+            + 0.1 * active_knights()
             + 0.1 * pawn_distance()
             + get_earlygame_multiplier() * (
-                     center_control()
+                    0.5 * center_control()
             )
             + get_endgame_multiplier() * (
                     king_activity() * 0.2
                     + pawn_distance() * 0.5
     );
+  }
+
+  private double active_knights() {
+    // knights should not be on the edges of the board
+    // 0 for knight on edge, 3 for night in center
+    int total = 0;
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        Piece piece = pieces[i][j];
+        if (piece.is_knight()) {
+          total += (piece.is_white() ? 1 : -1) * (3.5 - Math.abs(3.5 - i));
+          total += (piece.is_white() ? 1 : -1) * (3.5 - Math.abs(3.5 - j));
+        }
+      }
+    }
+    return total;
   }
 
   private double center_control() {
